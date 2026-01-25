@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node.js from .nvmrc
-        uses: ./.github/actions/setup-node-from-nvmrc
+        uses: ./actions/setup-node-from-nvmrc
       - uses: MetaMask/action-publish-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

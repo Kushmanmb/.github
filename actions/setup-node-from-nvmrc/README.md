@@ -8,7 +8,7 @@ A reusable composite action that sets up Node.js using the version specified in 
 steps:
   - uses: actions/checkout@v2
   - name: Setup Node.js from .nvmrc
-    uses: ./.github/actions/setup-node-from-nvmrc
+    uses: ./actions/setup-node-from-nvmrc
 ```
 
 ## Requirements

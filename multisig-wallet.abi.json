@@ -221,7 +221,7 @@
                 "type": "uint256"
             },
             {
-                "name": "_daylimit",
+                "name": "_dailyLimit",
                 "type": "uint256"
             }
         ],
@@ -231,12 +231,12 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "owner",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "operation",
                 "type": "bytes32"
             }
@@ -248,12 +248,12 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "owner",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "operation",
                 "type": "bytes32"
             }
@@ -265,12 +265,12 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "oldOwner",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "newOwner",
                 "type": "address"
             }
@@ -282,7 +282,7 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "newOwner",
                 "type": "address"
             }
@@ -294,7 +294,7 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "oldOwner",
                 "type": "address"
             }
@@ -335,7 +335,7 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "owner",
                 "type": "address"
             },
@@ -345,7 +345,7 @@
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "to",
                 "type": "address"
             },
@@ -362,12 +362,12 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "owner",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "operation",
                 "type": "bytes32"
             },
@@ -377,7 +377,7 @@
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "to",
                 "type": "address"
             },
@@ -394,12 +394,12 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "operation",
                 "type": "bytes32"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "initiator",
                 "type": "address"
             },
@@ -409,7 +409,7 @@
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "to",
                 "type": "address"
             },

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Bash configuration file with custom functions
 
-# cwhois: Custom whois function that queries bgp.tools
-# Usage: cwhois <query>
-cwhois() {
+# custom_whois_query: Custom whois function that queries bgp.tools for BGP information
+# Usage: custom_whois_query <query>
+custom_whois_query() {
     whois -h bgp.tools -v $*
 }
-export -f cwhois
+export -f custom_whois_query

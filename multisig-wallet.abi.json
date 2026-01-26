@@ -3,7 +3,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_owner",
+                "name": "_ownerAddress",
                 "type": "address"
             }
         ],
@@ -15,7 +15,7 @@
         "constant": true,
         "inputs": [
             {
-                "name": "_addr",
+                "name": "_address",
                 "type": "address"
             }
         ],
@@ -31,7 +31,7 @@
     {
         "constant": true,
         "inputs": [],
-        "name": "m_numOwners",
+        "name": "numberOfOwners",
         "outputs": [
             {
                 "name": "",
@@ -51,7 +51,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_owner",
+                "name": "_ownerAddress",
                 "type": "address"
             }
         ],
@@ -62,7 +62,7 @@
     {
         "constant": true,
         "inputs": [],
-        "name": "m_required",
+        "name": "requiredConfirmations",
         "outputs": [
             {
                 "name": "",
@@ -75,7 +75,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_h",
+                "name": "_transactionHash",
                 "type": "bytes32"
             }
         ],
@@ -92,7 +92,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_newLimit",
+                "name": "_newDailySpendingLimit",
                 "type": "uint256"
             }
         ],
@@ -104,22 +104,22 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_to",
+                "name": "_recipientAddress",
                 "type": "address"
             },
             {
-                "name": "_value",
+                "name": "_transactionValue",
                 "type": "uint256"
             },
             {
-                "name": "_data",
+                "name": "_transactionData",
                 "type": "bytes"
             }
         ],
         "name": "execute",
         "outputs": [
             {
-                "name": "_r",
+                "name": "_resultHash",
                 "type": "bytes32"
             }
         ],
@@ -129,7 +129,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_operation",
+                "name": "_operationHash",
                 "type": "bytes32"
             }
         ],
@@ -141,7 +141,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_newRequired",
+                "name": "_newRequiredConfirmations",
                 "type": "uint256"
             }
         ],
@@ -153,11 +153,11 @@
         "constant": true,
         "inputs": [
             {
-                "name": "_operation",
+                "name": "_operationHash",
                 "type": "bytes32"
             },
             {
-                "name": "_owner",
+                "name": "_ownerAddress",
                 "type": "address"
             }
         ],
@@ -174,7 +174,7 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_to",
+                "name": "_recipientAddress",
                 "type": "address"
             }
         ],
@@ -186,11 +186,11 @@
         "constant": false,
         "inputs": [
             {
-                "name": "_from",
+                "name": "_currentOwnerAddress",
                 "type": "address"
             },
             {
-                "name": "_to",
+                "name": "_newOwnerAddress",
                 "type": "address"
             }
         ],
@@ -201,7 +201,7 @@
     {
         "constant": true,
         "inputs": [],
-        "name": "m_dailyLimit",
+        "name": "dailySpendingLimit",
         "outputs": [
             {
                 "name": "",
@@ -213,15 +213,15 @@
     {
         "inputs": [
             {
-                "name": "_owners",
+                "name": "_ownerAddresses",
                 "type": "address[]"
             },
             {
-                "name": "_required",
+                "name": "_requiredConfirmations",
                 "type": "uint256"
             },
             {
-                "name": "_dailyLimit",
+                "name": "_dailySpendingLimit",
                 "type": "uint256"
             }
         ],
@@ -232,12 +232,12 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "owner",
+                "name": "ownerAddress",
                 "type": "address"
             },
             {
                 "indexed": true,
-                "name": "operation",
+                "name": "operationHash",
                 "type": "bytes32"
             }
         ],
@@ -249,12 +249,12 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "owner",
+                "name": "ownerAddress",
                 "type": "address"
             },
             {
                 "indexed": true,
-                "name": "operation",
+                "name": "operationHash",
                 "type": "bytes32"
             }
         ],
@@ -266,12 +266,12 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "oldOwner",
+                "name": "previousOwnerAddress",
                 "type": "address"
             },
             {
                 "indexed": true,
-                "name": "newOwner",
+                "name": "newOwnerAddress",
                 "type": "address"
             }
         ],
@@ -283,7 +283,7 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "newOwner",
+                "name": "newOwnerAddress",
                 "type": "address"
             }
         ],
@@ -295,7 +295,7 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "oldOwner",
+                "name": "removedOwnerAddress",
                 "type": "address"
             }
         ],
@@ -307,7 +307,7 @@
         "inputs": [
             {
                 "indexed": false,
-                "name": "newRequirement",
+                "name": "newRequiredConfirmations",
                 "type": "uint256"
             }
         ],
@@ -319,12 +319,12 @@
         "inputs": [
             {
                 "indexed": false,
-                "name": "_from",
+                "name": "_senderAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "value",
+                "name": "depositValue",
                 "type": "uint256"
             }
         ],
@@ -336,22 +336,22 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "owner",
+                "name": "ownerAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "value",
+                "name": "transactionValue",
                 "type": "uint256"
             },
             {
                 "indexed": true,
-                "name": "to",
+                "name": "recipientAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "data",
+                "name": "transactionData",
                 "type": "bytes"
             }
         ],
@@ -363,27 +363,27 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "owner",
+                "name": "ownerAddress",
                 "type": "address"
             },
             {
                 "indexed": true,
-                "name": "operation",
+                "name": "operationHash",
                 "type": "bytes32"
             },
             {
                 "indexed": false,
-                "name": "value",
+                "name": "transactionValue",
                 "type": "uint256"
             },
             {
                 "indexed": true,
-                "name": "to",
+                "name": "recipientAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "data",
+                "name": "transactionData",
                 "type": "bytes"
             }
         ],
@@ -395,27 +395,27 @@
         "inputs": [
             {
                 "indexed": true,
-                "name": "operation",
+                "name": "operationHash",
                 "type": "bytes32"
             },
             {
                 "indexed": true,
-                "name": "initiator",
+                "name": "initiatorAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "value",
+                "name": "transactionValue",
                 "type": "uint256"
             },
             {
                 "indexed": true,
-                "name": "to",
+                "name": "recipientAddress",
                 "type": "address"
             },
             {
                 "indexed": false,
-                "name": "data",
+                "name": "transactionData",
                 "type": "bytes"
             }
         ],

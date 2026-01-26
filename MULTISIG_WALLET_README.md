@@ -11,49 +11,49 @@ This directory contains the ABI (Application Binary Interface) definition for an
 The multisignature wallet contract provides secure multi-owner administration with the following capabilities:
 
 ### Owner Management
-- `addOwner(address _owner)` - Add a new owner to the wallet
-- `removeOwner(address _owner)` - Remove an existing owner
-- `changeOwner(address _from, address _to)` - Replace one owner with another
-- `isOwner(address _addr)` - Check if an address is an owner (read-only)
+- `addOwner(address _ownerAddress)` - Add a new owner to the wallet
+- `removeOwner(address _ownerAddress)` - Remove an existing owner
+- `changeOwner(address _currentOwnerAddress, address _newOwnerAddress)` - Replace one owner with another
+- `isOwner(address _address)` - Check if an address is an owner (read-only)
 
 ### Transaction Execution
-- `execute(address _to, uint256 _value, bytes _data)` - Submit a transaction for confirmation
-- `confirm(bytes32 _h)` - Add your signature to a pending operation
-- `revoke(bytes32 _operation)` - Withdraw your confirmation
-- `hasConfirmed(bytes32 _operation, address _owner)` - Check if an owner has confirmed (read-only)
+- `execute(address _recipientAddress, uint256 _transactionValue, bytes _transactionData)` - Submit a transaction for confirmation
+- `confirm(bytes32 _transactionHash)` - Add your signature to a pending operation
+- `revoke(bytes32 _operationHash)` - Withdraw your confirmation
+- `hasConfirmed(bytes32 _operationHash, address _ownerAddress)` - Check if an owner has confirmed (read-only)
 
 ### Configuration
-- `changeRequirement(uint256 _newRequired)` - Change the number of required signatures
-- `setDailyLimit(uint256 _newLimit)` - Set the daily spending limit
+- `changeRequirement(uint256 _newRequiredConfirmations)` - Change the number of required signatures
+- `setDailyLimit(uint256 _newDailySpendingLimit)` - Set the daily spending limit
 - `resetSpentToday()` - Reset today's spending counter
-- `kill(address _to)` - Destroy the contract and send remaining funds
+- `kill(address _recipientAddress)` - Destroy the contract and send remaining funds
 
 ### View Functions
-- `m_numOwners()` - Get the number of owners (read-only)
-- `m_required()` - Get the required number of signatures (read-only)
-- `m_dailyLimit()` - Get the daily spending limit (read-only)
+- `numberOfOwners()` - Get the number of owners (read-only)
+- `requiredConfirmations()` - Get the required number of signatures (read-only)
+- `dailySpendingLimit()` - Get the daily spending limit (read-only)
 
 ## Events
 
 The contract emits the following events with indexed parameters for efficient filtering:
 
-- `OwnerAdded(address indexed newOwner)`
-- `OwnerRemoved(address indexed oldOwner)`
-- `OwnerChanged(address indexed oldOwner, address indexed newOwner)`
-- `Confirmation(address indexed owner, bytes32 indexed operation)`
-- `Revoke(address indexed owner, bytes32 indexed operation)`
-- `SingleTransact(address indexed owner, uint256 value, address indexed to, bytes data)`
-- `MultiTransact(address indexed owner, bytes32 indexed operation, uint256 value, address indexed to, bytes data)`
-- `ConfirmationNeeded(bytes32 indexed operation, address indexed initiator, uint256 value, address indexed to, bytes data)`
-- `RequirementChanged(uint256 newRequirement)`
-- `Deposit(address _from, uint256 value)`
+- `OwnerAdded(address indexed newOwnerAddress)`
+- `OwnerRemoved(address indexed removedOwnerAddress)`
+- `OwnerChanged(address indexed previousOwnerAddress, address indexed newOwnerAddress)`
+- `Confirmation(address indexed ownerAddress, bytes32 indexed operationHash)`
+- `Revoke(address indexed ownerAddress, bytes32 indexed operationHash)`
+- `SingleTransact(address indexed ownerAddress, uint256 transactionValue, address indexed recipientAddress, bytes transactionData)`
+- `MultiTransact(address indexed ownerAddress, bytes32 indexed operationHash, uint256 transactionValue, address indexed recipientAddress, bytes transactionData)`
+- `ConfirmationNeeded(bytes32 indexed operationHash, address indexed initiatorAddress, uint256 transactionValue, address indexed recipientAddress, bytes transactionData)`
+- `RequirementChanged(uint256 newRequiredConfirmations)`
+- `Deposit(address _senderAddress, uint256 depositValue)`
 
 ## Deployment
 
 When deploying the contract, the constructor requires:
-- `address[] _owners` - Array of initial owner addresses
-- `uint256 _required` - Number of required confirmations for transactions
-- `uint256 _dailyLimit` - Maximum amount that can be spent per day without multi-sig
+- `address[] _ownerAddresses` - Array of initial owner addresses
+- `uint256 _requiredConfirmations` - Number of required confirmations for transactions
+- `uint256 _dailySpendingLimit` - Maximum amount that can be spent per day without multi-sig
 
 ## Owner Address
 
@@ -79,7 +79,7 @@ const isOwner = await contract.methods.isOwner('0x6B834a2f2a24ae7e592AA0843aa2bD
 console.log('Is owner:', isOwner);
 
 // Example: Get number of owners
-const numOwners = await contract.methods.m_numOwners().call();
+const numOwners = await contract.methods.numberOfOwners().call();
 console.log('Number of owners:', numOwners);
 ```
 

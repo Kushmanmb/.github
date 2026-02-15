@@ -9,6 +9,10 @@ inputs:
     description: 'Whether to download from artifacts (requires cache job to have run first)'
     required: false
     default: 'true'
+  cache-version:
+    description: 'Cache version (must match sync-assets for cache hits)'
+    required: false
+    default: 'v1'
 
 outputs:
   mining-pool-cache-hit:
@@ -27,7 +31,9 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: mining-pool-assets.zip
-        key: mining-pool-assets-cache
+        key: mining-pool-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        restore-keys: |
+          mining-pool-assets-${{ inputs.cache-version }}-
 
     - name: Restore cached promo video assets
       continue-on-error: true
@@ -35,7 +41,9 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: promo-video-assets.zip
-        key: promo-video-assets-cache
+        key: promo-video-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        restore-keys: |
+          promo-video-assets-${{ inputs.cache-version }}-
 
     - name: Download mining pool artifact
       if: inputs.use-artifacts == 'true'

@@ -12,6 +12,10 @@ inputs:
     description: 'npm command to run for syncing assets'
     required: false
     default: 'npm run sync-assets-dev'
+  cache-version:
+    description: 'Cache version for manual invalidation (bump to force fresh sync)'
+    required: false
+    default: 'v1'
 
 runs:
   using: 'composite'
@@ -22,7 +26,9 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: mining-pool-assets.zip
-        key: mining-pool-assets-cache
+        key: mining-pool-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        restore-keys: |
+          mining-pool-assets-${{ inputs.cache-version }}-
 
     - name: Restore cached promo video assets
       continue-on-error: true
@@ -30,7 +36,9 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: promo-video-assets.zip
-        key: promo-video-assets-cache
+        key: promo-video-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        restore-keys: |
+          promo-video-assets-${{ inputs.cache-version }}-
 
     - name: Unzip mining pool assets before sync
       continue-on-error: true
@@ -86,11 +94,11 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: mining-pool-assets.zip
-        key: mining-pool-assets-cache
+        key: mining-pool-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
 
     - name: Save promo video assets cache
       if: steps.cache-promo-video-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: promo-video-assets.zip
-        key: promo-video-assets-cache
+        key: promo-video-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}

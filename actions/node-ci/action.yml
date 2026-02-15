@@ -44,7 +44,7 @@ runs:
       if: inputs.checkout-submodules == 'true'
       shell: bash
       run: git submodule update --init --recursive
-      working-directory: ${{ inputs.checkout-path }}/${{ inputs.working-directory }}
+      working-directory: ${{ inputs.checkout-path }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4

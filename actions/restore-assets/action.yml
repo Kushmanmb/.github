@@ -54,9 +54,21 @@ runs:
     - name: Unzip mining pool assets
       shell: bash
       continue-on-error: true
-      run: unzip -o mining-pool-assets.zip -d ${{ inputs.frontend-path }}/src/resources/mining-pools
+      run: |
+        if [ -f "mining-pool-assets.zip" ]; then
+          echo "Found mining-pool-assets.zip, unzipping..."
+          unzip -o mining-pool-assets.zip -d "${{ inputs.frontend-path }}/src/resources/mining-pools"
+        else
+          echo "mining-pool-assets.zip not found; skipping unzip."
+        fi
 
     - name: Unzip promo video assets
       shell: bash
       continue-on-error: true
-      run: unzip -o promo-video-assets.zip -d ${{ inputs.frontend-path }}/src/resources/promo-video
+      run: |
+        if [ -f "promo-video-assets.zip" ]; then
+          echo "Found promo-video-assets.zip, unzipping..."
+          unzip -o promo-video-assets.zip -d "${{ inputs.frontend-path }}/src/resources/promo-video"
+        else
+          echo "promo-video-assets.zip not found; skipping unzip."
+        fi

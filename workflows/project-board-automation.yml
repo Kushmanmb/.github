@@ -48,7 +48,12 @@ jobs:
             const handleIssues = ${{ inputs.handle-issues }};
 
             // Skip draft PRs
-            if (context.eventName === 'pull_request' && context.payload.pull_request.draft) {
+            if (
+              context.eventName === 'pull_request' &&
+              context.payload &&
+              context.payload.pull_request &&
+              context.payload.pull_request.draft
+            ) {
               console.log('PR is a draft, skipping Review Needed status...');
               return;
             }

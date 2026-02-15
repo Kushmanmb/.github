@@ -93,15 +93,19 @@ jobs:
             if (context.eventName === 'pull_request') {
               // GraphQL query to find the PR's project items
               const query = `
-                query($owner: String!, $repo: String!, $pr: Int!) {
+                query($owner: String!, $repo: String!, $pr: Int!, $cursor: String) {
                   repository(owner: $owner, name: $repo) {
                     pullRequest(number: $pr) {
-                      projectItems(first: 10) {
+                      projectItems(first: 50, after: $cursor) {
                         nodes {
                           id
                           project {
                             number
                           }
+                        }
+                        pageInfo {
+                          hasNextPage
+                          endCursor
                         }
                       }
                     }
@@ -109,15 +113,26 @@ jobs:
                 }
               `;
 
-              // Execute the query with current repo/PR context
-              const result = await github.graphql(query, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pr: context.payload.pull_request.number
-              });
+              // Paginate through all project items for the PR
+              let projectItems = [];
+              let cursor = null;
+              let hasNextPage = true;
+
+              while (hasNextPage) {
+                const result = await github.graphql(query, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pr: context.payload.pull_request.number,
+                  cursor
+                });
+
+                const projectItemsConnection = result.repository.pullRequest.projectItems;
+                projectItems = projectItems.concat(projectItemsConnection.nodes || []);
+                hasNextPage = projectItemsConnection.pageInfo.hasNextPage;
+                cursor = projectItemsConnection.pageInfo.endCursor;
+              }
 
               // Find the project item that belongs to the target project
-              const projectItems = result.repository.pullRequest.projectItems.nodes;
               const projectItem = projectItems.find(item => item.project.number === projectNumber);
 
               // Exit early if PR isn't in the target project

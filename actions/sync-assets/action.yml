@@ -1,0 +1,84 @@
+name: 'Sync and Cache Assets'
+description: 'Sync assets from CDN, zip, upload as artifacts, and save to cache'
+
+inputs:
+  frontend-path:
+    description: 'Path to frontend directory'
+    required: true
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  sync-command:
+    description: 'npm command to run for syncing assets'
+    required: false
+    default: 'npm run sync-assets-dev'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore cached mining pool assets
+      continue-on-error: true
+      id: cache-mining-pool-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-cache
+
+    - name: Restore cached promo video assets
+      continue-on-error: true
+      id: cache-promo-video-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-cache
+
+    - name: Unzip mining pool assets before sync
+      continue-on-error: true
+      shell: bash
+      run: unzip -o mining-pool-assets.zip -d ${{ inputs.frontend-path }}/src/resources/mining-pools
+
+    - name: Unzip promo video assets before sync
+      continue-on-error: true
+      shell: bash
+      run: unzip -o promo-video-assets.zip -d ${{ inputs.frontend-path }}/src/resources/promo-video
+
+    - name: Sync assets
+      shell: bash
+      run: ${{ inputs.sync-command }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MEMPOOL_CDN: 1
+        VERBOSE: 1
+      working-directory: ${{ inputs.frontend-path }}
+
+    - name: Zip mining pool assets
+      shell: bash
+      run: zip -jrq mining-pool-assets.zip ${{ inputs.frontend-path }}/src/resources/mining-pools/*
+
+    - name: Zip promo video assets
+      shell: bash
+      run: zip -jrq promo-video-assets.zip ${{ inputs.frontend-path }}/src/resources/promo-video/*
+
+    - name: Upload mining pool assets artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mining-pool-assets
+        path: mining-pool-assets.zip
+
+    - name: Upload promo video assets artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: promo-video-assets
+        path: promo-video-assets.zip
+
+    - name: Save mining pool assets cache
+      uses: actions/cache/save@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-cache
+
+    - name: Save promo video assets cache
+      uses: actions/cache/save@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-cache

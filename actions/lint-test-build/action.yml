@@ -1,0 +1,56 @@
+name: 'Lint, Test, and Build'
+description: 'Run lint, test, and build steps for Node.js projects'
+
+inputs:
+  working-directory:
+    description: 'Working directory for commands'
+    required: true
+  flavor:
+    description: 'Build flavor (dev or prod) - lint and test only run for dev'
+    required: false
+    default: 'dev'
+  run-lint:
+    description: 'Whether to run lint step'
+    required: false
+    default: 'true'
+  lint-command:
+    description: 'Command to run for linting'
+    required: false
+    default: 'npm run lint'
+  run-test:
+    description: 'Whether to run test step'
+    required: false
+    default: 'true'
+  test-command:
+    description: 'Command to run for testing'
+    required: false
+    default: 'npm run test'
+  run-build:
+    description: 'Whether to run build step'
+    required: false
+    default: 'true'
+  build-command:
+    description: 'Command to run for building'
+    required: false
+    default: 'npm run build'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Lint
+      if: inputs.run-lint == 'true' && inputs.flavor == 'dev'
+      shell: bash
+      run: ${{ inputs.lint-command }}
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Test
+      if: inputs.run-test == 'true' && inputs.flavor == 'dev'
+      shell: bash
+      run: ${{ inputs.test-command }}
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Build
+      if: inputs.run-build == 'true'
+      shell: bash
+      run: ${{ inputs.build-command }}
+      working-directory: ${{ inputs.working-directory }}

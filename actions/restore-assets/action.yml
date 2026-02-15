@@ -1,0 +1,62 @@
+name: 'Restore Cached Assets'
+description: 'Restore cached mining pool and promo video assets from cache and/or artifacts'
+
+inputs:
+  frontend-path:
+    description: 'Path to frontend directory'
+    required: true
+  use-artifacts:
+    description: 'Whether to download from artifacts (requires cache job to have run first)'
+    required: false
+    default: 'true'
+
+outputs:
+  mining-pool-cache-hit:
+    description: 'Whether mining pool assets were found in cache'
+    value: ${{ steps.cache-mining-pool-restore.outputs.cache-hit }}
+  promo-video-cache-hit:
+    description: 'Whether promo video assets were found in cache'
+    value: ${{ steps.cache-promo-video-restore.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore cached mining pool assets
+      continue-on-error: true
+      id: cache-mining-pool-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-cache
+
+    - name: Restore cached promo video assets
+      continue-on-error: true
+      id: cache-promo-video-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-cache
+
+    - name: Download mining pool artifact
+      if: inputs.use-artifacts == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: mining-pool-assets
+      continue-on-error: true
+
+    - name: Download promo video artifact
+      if: inputs.use-artifacts == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: promo-video-assets
+      continue-on-error: true
+
+    - name: Unzip mining pool assets
+      shell: bash
+      continue-on-error: true
+      run: unzip -o mining-pool-assets.zip -d ${{ inputs.frontend-path }}/src/resources/mining-pools
+
+    - name: Unzip promo video assets
+      shell: bash
+      continue-on-error: true
+      run: unzip -o promo-video-assets.zip -d ${{ inputs.frontend-path }}/src/resources/promo-video

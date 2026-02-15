@@ -46,14 +46,14 @@ runs:
           promo-video-assets-${{ inputs.cache-version }}-
 
     - name: Download mining pool artifact
-      if: inputs.use-artifacts == 'true'
+      if: fromJSON(inputs.use-artifacts)
       uses: actions/download-artifact@v4
       with:
         name: mining-pool-assets
       continue-on-error: true
 
     - name: Download promo video artifact
-      if: inputs.use-artifacts == 'true'
+      if: fromJSON(inputs.use-artifacts)
       uses: actions/download-artifact@v4
       with:
         name: promo-video-assets

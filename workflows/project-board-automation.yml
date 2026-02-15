@@ -83,10 +83,12 @@ jobs:
                   const path = e.path ?? [];
                   const fromOurMutation = Array.isArray(path) && path.includes('addProjectV2ItemById');
                   if (!fromOurMutation) return false;
+                  const isUnprocessable = e.extensions?.code === 'UNPROCESSABLE';
+                  if (!isUnprocessable) return false;
                   // Match the known GitHub error phrasing for duplicate items
                   const msg = e.message.toLowerCase();
-                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/.test(msg) ||
-                         (e.extensions?.code === 'UNPROCESSABLE' && msg.includes('already'));
+                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg) ||
+                         msg.includes('already');
                 });
 
                 if (isAlreadyInProject) {

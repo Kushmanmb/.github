@@ -20,8 +20,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # Cache miss is success with cache-hit=false; only real errors (network, permissions) fail the step.
     - name: Restore cached mining pool assets
-      continue-on-error: true
       id: cache-mining-pool-restore
       uses: actions/cache/restore@v4
       with:
@@ -30,8 +30,8 @@ runs:
         restore-keys: |
           mining-pool-assets-${{ inputs.cache-version }}-
 
+    # Cache miss is success with cache-hit=false; only real errors (network, permissions) fail the step.
     - name: Restore cached promo video assets
-      continue-on-error: true
       id: cache-promo-video-restore
       uses: actions/cache/restore@v4
       with:

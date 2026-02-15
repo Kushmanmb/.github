@@ -124,11 +124,14 @@ jobs:
               `;
 
               // Paginate through all project items for the PR
+              const MAX_PAGES = 100;
               let projectItems = [];
               let cursor = null;
               let hasNextPage = true;
+              let page = 0;
 
-              while (hasNextPage) {
+              while (hasNextPage && page < MAX_PAGES) {
+                page += 1;
                 const result = await github.graphql(query, {
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -140,6 +143,10 @@ jobs:
                 projectItems = projectItems.concat(projectItemsConnection.nodes || []);
                 hasNextPage = projectItemsConnection.pageInfo.hasNextPage;
                 cursor = projectItemsConnection.pageInfo.endCursor;
+              }
+
+              if (hasNextPage) {
+                console.warn(`Stopped after ${MAX_PAGES} pages; more project items may exist.`);
               }
 
               // Find the project item that belongs to the target project

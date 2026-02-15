@@ -71,15 +71,20 @@ jobs:
 
                 console.log(`Successfully added issue to project #${projectNumber}`);
               } catch (error) {
-                // Handle case where the issue is already in the project
-                const errors = error && error.errors ? error.errors : [];
-                const alreadyInProject = errors.some(e =>
-                  typeof e.message === 'string' &&
-                  e.message.toLowerCase().includes('already') &&
-                  e.message.toLowerCase().includes('project')
-                );
+                const errors = error?.errors ?? [];
+                const isAlreadyInProject = errors.some(e => {
+                  if (typeof e.message !== 'string') return false;
+                  // Only handle errors from our mutation
+                  const path = e.path ?? [];
+                  const fromOurMutation = Array.isArray(path) && path.includes('addProjectV2ItemById');
+                  if (!fromOurMutation) return false;
+                  // Match the known GitHub error phrasing for duplicate items
+                  const msg = e.message.toLowerCase();
+                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg) ||
+                         (e.extensions?.code === 'UNPROCESSABLE' && msg.includes('already'));
+                });
 
-                if (alreadyInProject) {
+                if (isAlreadyInProject) {
                   console.log(`Issue is already in project #${projectNumber}, skipping add.`);
                 } else {
                   console.error(`Failed to add issue to project #${projectNumber}:`, error);

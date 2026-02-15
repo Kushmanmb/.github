@@ -37,7 +37,8 @@ runs:
       uses: actions/checkout@v4
       with:
         path: ${{ inputs.checkout-path }}
-        ref: ${{ inputs.checkout-ref || github.ref }}
+        # Use github.ref when checkout-ref input is empty
+        ref: ${{ inputs.checkout-ref != '' && inputs.checkout-ref || github.ref }}
 
     - name: Checkout submodules
       if: inputs.checkout-submodules == 'true'

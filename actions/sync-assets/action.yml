@@ -35,12 +35,22 @@ runs:
     - name: Unzip mining pool assets before sync
       continue-on-error: true
       shell: bash
-      run: unzip -o mining-pool-assets.zip -d ${{ inputs.frontend-path }}/src/resources/mining-pools
+      run: |
+        if [[ -f "mining-pool-assets.zip" ]]; then
+          unzip -o mining-pool-assets.zip -d "${{ inputs.frontend-path }}/src/resources/mining-pools"
+        else
+          echo "No cached mining pool assets zip found; skipping unzip."
+        fi
 
     - name: Unzip promo video assets before sync
       continue-on-error: true
       shell: bash
-      run: unzip -o promo-video-assets.zip -d ${{ inputs.frontend-path }}/src/resources/promo-video
+      run: |
+        if [[ -f "promo-video-assets.zip" ]]; then
+          unzip -o promo-video-assets.zip -d "${{ inputs.frontend-path }}/src/resources/promo-video"
+        else
+          echo "No cached promo video assets zip found; skipping unzip."
+        fi
 
     - name: Sync assets
       shell: bash

@@ -85,7 +85,7 @@ jobs:
                   if (!fromOurMutation) return false;
                   // Match the known GitHub error phrasing for duplicate items
                   const msg = e.message.toLowerCase();
-                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg) ||
+                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/.test(msg) ||
                          (e.extensions?.code === 'UNPROCESSABLE' && msg.includes('already'));
                 });
 

@@ -82,12 +82,14 @@ runs:
         path: promo-video-assets.zip
 
     - name: Save mining pool assets cache
+      if: steps.cache-mining-pool-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: mining-pool-assets.zip
         key: mining-pool-assets-cache
 
     - name: Save promo video assets cache
+      if: steps.cache-promo-video-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: promo-video-assets.zip

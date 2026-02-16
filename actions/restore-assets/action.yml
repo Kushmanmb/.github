@@ -67,18 +67,18 @@ runs:
           promo-video-assets-${{ steps.asset-hash.outputs.hash }}
 
     - name: Download mining pool artifact
+      continue-on-error: true
       if: fromJSON(inputs.use-artifacts)
       uses: actions/download-artifact@v4
       with:
         name: mining-pool-assets
-      continue-on-error: true
 
     - name: Download promo video artifact
+      continue-on-error: true
       if: fromJSON(inputs.use-artifacts)
       uses: actions/download-artifact@v4
       with:
         name: promo-video-assets
-      continue-on-error: true
 
     - name: Unzip mining pool assets
       shell: bash

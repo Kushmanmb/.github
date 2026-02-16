@@ -1,0 +1,92 @@
+name: 'Restore Cached Assets'
+description: 'Restore cached mining pool and promo video assets from cache and/or artifacts'
+
+inputs:
+  frontend-path:
+    description: 'Path to frontend directory'
+    required: true
+  github-token:
+    description: 'GitHub token for API access (used to compute cache key from remote SHAs)'
+    required: true
+  use-artifacts:
+    description: 'Whether to download from artifacts (requires cache job to have run first)'
+    required: false
+    default: 'true'
+  cache-version:
+    description: 'Cache version fallback when remote SHA lookup fails'
+    required: false
+    default: 'v1'
+
+outputs:
+  mining-pool-cache-hit:
+    description: 'Whether mining pool assets were found in cache'
+    value: ${{ steps.cache-mining-pool-restore.outputs.cache-hit }}
+  promo-video-cache-hit:
+    description: 'Whether promo video assets were found in cache'
+    value: ${{ steps.cache-promo-video-restore.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Compute asset cache key from remote SHAs
+      id: asset-hash
+      uses: ./.github/actions/compute-asset-hash
+      with:
+        github-token: ${{ inputs.github-token }}
+        cache-version: ${{ inputs.cache-version }}
+
+    - name: Restore cached mining pool assets
+      continue-on-error: true
+      id: cache-mining-pool-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-${{ steps.asset-hash.outputs.hash }}
+        restore-keys: |
+          mining-pool-assets-
+
+    - name: Restore cached promo video assets
+      continue-on-error: true
+      id: cache-promo-video-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-${{ steps.asset-hash.outputs.hash }}
+        restore-keys: |
+          promo-video-assets-
+
+    - name: Download mining pool artifact
+      continue-on-error: true
+      if: fromJSON(inputs.use-artifacts)
+      uses: actions/download-artifact@v4
+      with:
+        name: mining-pool-assets
+
+    - name: Download promo video artifact
+      continue-on-error: true
+      if: fromJSON(inputs.use-artifacts)
+      uses: actions/download-artifact@v4
+      with:
+        name: promo-video-assets
+
+    - name: Unzip mining pool assets
+      shell: bash
+      continue-on-error: true
+      run: |
+        if [ -f "mining-pool-assets.zip" ]; then
+          echo "Found mining-pool-assets.zip, unzipping..."
+          unzip -o mining-pool-assets.zip -d "${{ inputs.frontend-path }}/src/resources/mining-pools"
+        else
+          echo "mining-pool-assets.zip not found; skipping unzip."
+        fi
+
+    - name: Unzip promo video assets
+      shell: bash
+      continue-on-error: true
+      run: |
+        if [ -f "promo-video-assets.zip" ]; then
+          echo "Found promo-video-assets.zip, unzipping..."
+          unzip -o promo-video-assets.zip -d "${{ inputs.frontend-path }}/src/resources/promo-video"
+        else
+          echo "promo-video-assets.zip not found; skipping unzip."
+        fi

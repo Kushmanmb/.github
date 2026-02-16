@@ -1,0 +1,122 @@
+name: 'Sync and Cache Assets'
+description: 'Sync assets from CDN, zip, upload as artifacts, and save to cache. Script input must be an npm script name only and should only be set by trusted workflow authors.'
+
+inputs:
+  frontend-path:
+    description: 'Path to frontend directory'
+    required: true
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  sync-script:
+    description: 'npm script name for syncing assets (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    required: false
+    default: 'sync-assets-dev'
+  cache-version:
+    description: 'Cache version fallback when remote SHA lookup fails'
+    required: false
+    default: 'v1'
+
+outputs:
+  cache-key-hash:
+    description: 'Hash used for cache keys (from remote SHAs or cache-version fallback)'
+    value: ${{ steps.asset-hash.outputs.hash }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Compute asset cache key from remote SHAs
+      id: asset-hash
+      uses: ./.github/actions/compute-asset-hash
+      with:
+        github-token: ${{ inputs.github-token }}
+        cache-version: ${{ inputs.cache-version }}
+
+    # Cache miss is success with cache-hit=false; only real errors (network, permissions) fail the step.
+    - name: Restore cached mining pool assets
+      id: cache-mining-pool-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-${{ steps.asset-hash.outputs.hash }}
+        restore-keys: |
+          mining-pool-assets-
+
+    # Cache miss is success with cache-hit=false; only real errors (network, permissions) fail the step.
+    - name: Restore cached promo video assets
+      id: cache-promo-video-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-${{ steps.asset-hash.outputs.hash }}
+        restore-keys: |
+          promo-video-assets-
+
+    - name: Unzip mining pool assets before sync
+      continue-on-error: true
+      shell: bash
+      run: |
+        if [[ -f "mining-pool-assets.zip" ]]; then
+          unzip -o mining-pool-assets.zip -d "${{ inputs.frontend-path }}/src/resources/mining-pools"
+        else
+          echo "No cached mining pool assets zip found; skipping unzip."
+        fi
+
+    - name: Unzip promo video assets before sync
+      continue-on-error: true
+      shell: bash
+      run: |
+        if [[ -f "promo-video-assets.zip" ]]; then
+          unzip -o promo-video-assets.zip -d "${{ inputs.frontend-path }}/src/resources/promo-video"
+        else
+          echo "No cached promo video assets zip found; skipping unzip."
+        fi
+
+    - name: Sync assets
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MEMPOOL_CDN: 1
+        VERBOSE: 1
+        SYNC_SCRIPT: ${{ inputs.sync-script }}
+      run: |
+        if [[ ! "$SYNC_SCRIPT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+          echo "::error::sync-script must match ^[a-zA-Z0-9_-]+$ (got: $SYNC_SCRIPT)"
+          exit 1
+        fi
+        npm run "$SYNC_SCRIPT"
+      working-directory: ${{ inputs.frontend-path }}
+
+    - name: Zip mining pool assets
+      shell: bash
+      run: zip -jrq mining-pool-assets.zip ${{ inputs.frontend-path }}/src/resources/mining-pools/*
+
+    - name: Zip promo video assets
+      shell: bash
+      run: zip -jrq promo-video-assets.zip ${{ inputs.frontend-path }}/src/resources/promo-video/*
+
+    - name: Upload mining pool assets artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mining-pool-assets
+        path: mining-pool-assets.zip
+
+    - name: Upload promo video assets artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: promo-video-assets
+        path: promo-video-assets.zip
+
+    - name: Save mining pool assets cache
+      if: steps.cache-mining-pool-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: mining-pool-assets.zip
+        key: mining-pool-assets-${{ steps.asset-hash.outputs.hash }}
+
+    - name: Save promo video assets cache
+      if: steps.cache-promo-video-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: promo-video-assets.zip
+        key: promo-video-assets-${{ steps.asset-hash.outputs.hash }}

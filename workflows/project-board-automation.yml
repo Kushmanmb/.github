@@ -1,0 +1,201 @@
+# Reusable workflow: Automate project board management
+# - Add newly created issues to project board
+# - Set status to "Review Needed" when a reviewer is requested on a non-draft PR
+name: Project Board Automation
+
+on:
+  workflow_call:
+    inputs:
+      project-number:
+        description: 'The project board number'
+        required: false
+        type: number
+        default: 8
+      runs-on:
+        description: 'Runner to use for the job'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+      handle-issues:
+        description: 'Whether to handle adding issues to project board'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      PROJECT_TOKEN:
+        description: 'PAT with project write access'
+        required: true
+      PROJECT_ID:
+        description: 'The project unique identifier'
+        required: true
+      STATUS_FIELD_ID:
+        description: 'The Status field unique identifier'
+        required: true
+      REVIEW_NEEDED_OPTION_ID:
+        description: 'The Review Needed option unique identifier'
+        required: true
+
+jobs:
+  manage-project-board:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Update Project Board
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const projectNumber = ${{ inputs.project-number }};
+            const handleIssues = ${{ inputs.handle-issues }};
+
+            // Skip draft PRs
+            if (
+              context.eventName === 'pull_request' &&
+              context.payload &&
+              context.payload.pull_request &&
+              context.payload.pull_request.draft
+            ) {
+              console.log('PR is a draft, skipping Review Needed status...');
+              return;
+            }
+
+            // Handle new issues - add to project
+            if (context.eventName === 'issues' && handleIssues) {
+              const addMutation = `
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item { id }
+                  }
+                }
+              `;
+
+              try {
+                await github.graphql(addMutation, {
+                  projectId: "${{ secrets.PROJECT_ID }}",
+                  contentId: context.payload.issue.node_id
+                });
+
+                console.log(`Successfully added issue to project #${projectNumber}`);
+              } catch (error) {
+                const errors = error?.errors ?? [];
+                const isAlreadyInProject = errors.some(e => {
+                  if (typeof e.message !== 'string') return false;
+                  // Only handle errors from our mutation
+                  const path = e.path ?? [];
+                  const fromOurMutation = Array.isArray(path) && path.includes('addProjectV2ItemById');
+                  if (!fromOurMutation) return false;
+                  const isUnprocessable = e.extensions?.code === 'UNPROCESSABLE';
+                  if (!isUnprocessable) return false;
+                  // Match the known GitHub error phrasing for duplicate items
+                  const msg = e.message.toLowerCase();
+                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg);
+                });
+
+                if (isAlreadyInProject) {
+                  console.log(`Issue is already in project #${projectNumber}, skipping add.`);
+                } else {
+                  console.error(`Failed to add issue to project #${projectNumber}:`, error);
+                  throw error;
+                }
+              }
+              return;
+            }
+
+            // Handle PR review_requested - update status to "Review Needed"
+            if (context.eventName === 'pull_request') {
+              // GraphQL query to find the PR's project items
+              const query = `
+                query($owner: String!, $repo: String!, $pr: Int!, $cursor: String) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $pr) {
+                      projectItems(first: 50, after: $cursor) {
+                        nodes {
+                          id
+                          project {
+                            number
+                          }
+                        }
+                        pageInfo {
+                          hasNextPage
+                          endCursor
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+
+              // Paginate through all project items for the PR
+              const MAX_PAGES = 100;
+              let projectItems = [];
+              let cursor = null;
+              let hasNextPage = true;
+              let page = 0;
+
+              while (hasNextPage && page < MAX_PAGES) {
+                page += 1;
+                const result = await github.graphql(query, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pr: context.payload.pull_request.number,
+                  cursor
+                });
+
+                const projectItemsConnection = result.repository.pullRequest.projectItems;
+                projectItems = projectItems.concat(projectItemsConnection.nodes || []);
+                hasNextPage = projectItemsConnection.pageInfo.hasNextPage;
+                cursor = projectItemsConnection.pageInfo.endCursor;
+              }
+
+              if (hasNextPage) {
+                console.warn(`Stopped after ${MAX_PAGES} pages; more project items may exist.`);
+                const message = `Stopped after ${MAX_PAGES} pages; more project items may exist. Failing to avoid using incomplete project data.`;
+                console.error(message);
+                throw new Error(message);
+              }
+
+              // Find the project item that belongs to the target project
+              const projectItem = projectItems.find(item => item.project.number === projectNumber);
+
+              // Exit early if PR isn't in the target project
+              if (!projectItem) {
+                console.log(`PR is not in project #${projectNumber}, skipping...`);
+                return;
+              }
+
+              // GraphQL mutation to update the Status field
+              const mutation = `
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                      value: { singleSelectOptionId: $optionId }
+                    }
+                  ) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }
+              `;
+
+              // Execute the mutation with error handling for better debugging
+              try {
+                await github.graphql(mutation, {
+                  projectId: "${{ secrets.PROJECT_ID }}",
+                  itemId: projectItem.id,
+                  fieldId: "${{ secrets.STATUS_FIELD_ID }}",
+                  optionId: "${{ secrets.REVIEW_NEEDED_OPTION_ID }}"
+                });
+
+                console.log('Successfully updated project status to Review Needed');
+              } catch (error) {
+                console.error(
+                  `Failed to update project status to Review Needed for project #${projectNumber} and item ${projectItem.id}:`,
+                  error
+                );
+                throw error;
+              }
+            }
+            }

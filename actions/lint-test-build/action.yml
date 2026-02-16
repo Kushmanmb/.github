@@ -1,0 +1,77 @@
+name: 'Lint, Test, and Build'
+description: 'Run lint, test, and build steps for Node.js projects. Script inputs must be npm script names only and should only be set by trusted workflow authors.'
+
+inputs:
+  working-directory:
+    description: 'Working directory for commands'
+    required: true
+  flavor:
+    description: 'Build flavor (dev or prod) - lint and test only run for dev'
+    required: false
+    default: 'dev'
+  run-lint:
+    description: 'Whether to run lint step'
+    required: false
+    default: 'true'
+  lint-script:
+    description: 'npm script name for linting (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    required: false
+    default: 'lint'
+  run-test:
+    description: 'Whether to run test step'
+    required: false
+    default: 'true'
+  test-script:
+    description: 'npm script name for testing (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    required: false
+    default: 'test'
+  run-build:
+    description: 'Whether to run build step'
+    required: false
+    default: 'true'
+  build-script:
+    description: 'npm script name for building (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    required: false
+    default: 'build'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Lint
+      if: inputs.run-lint == 'true' && inputs.flavor == 'dev'
+      shell: bash
+      env:
+        LINT_SCRIPT: ${{ inputs.lint-script }}
+      run: |
+        if [[ ! "$LINT_SCRIPT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+          echo "::error::lint-script must match ^[a-zA-Z0-9_-]+$ (got: $LINT_SCRIPT)"
+          exit 1
+        fi
+        npm run "$LINT_SCRIPT"
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Test
+      if: inputs.run-test == 'true' && inputs.flavor == 'dev'
+      shell: bash
+      env:
+        TEST_SCRIPT: ${{ inputs.test-script }}
+      run: |
+        if [[ ! "$TEST_SCRIPT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+          echo "::error::test-script must match ^[a-zA-Z0-9_-]+$ (got: $TEST_SCRIPT)"
+          exit 1
+        fi
+        npm run "$TEST_SCRIPT"
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Build
+      if: inputs.run-build == 'true'
+      shell: bash
+      env:
+        BUILD_SCRIPT: ${{ inputs.build-script }}
+      run: |
+        if [[ ! "$BUILD_SCRIPT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+          echo "::error::build-script must match ^[a-zA-Z0-9_-]+$ (got: $BUILD_SCRIPT)"
+          exit 1
+        fi
+        npm run "$BUILD_SCRIPT"
+      working-directory: ${{ inputs.working-directory }}

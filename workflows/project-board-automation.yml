@@ -177,13 +177,21 @@ jobs:
                 }
               `;
 
-              // Execute the mutation
-              await github.graphql(mutation, {
-                projectId: "${{ secrets.PROJECT_ID }}",
-                itemId: projectItem.id,
-                fieldId: "${{ secrets.STATUS_FIELD_ID }}",
-                optionId: "${{ secrets.REVIEW_NEEDED_OPTION_ID }}"
-              });
+              // Execute the mutation with error handling for better debugging
+              try {
+                await github.graphql(mutation, {
+                  projectId: "${{ secrets.PROJECT_ID }}",
+                  itemId: projectItem.id,
+                  fieldId: "${{ secrets.STATUS_FIELD_ID }}",
+                  optionId: "${{ secrets.REVIEW_NEEDED_OPTION_ID }}"
+                });
 
-              console.log('Successfully updated project status to Review Needed');
+                console.log('Successfully updated project status to Review Needed');
+              } catch (error) {
+                console.error(
+                  `Failed to update project status to Review Needed for project #${projectNumber} and item ${projectItem.id}:`,
+                  error
+                );
+                throw error;
+              }
             }

@@ -87,8 +87,7 @@ jobs:
                   if (!isUnprocessable) return false;
                   // Match the known GitHub error phrasing for duplicate items
                   const msg = e.message.toLowerCase();
-                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg) ||
-                         msg.includes('already');
+                  return /already\s+(exists\s+)?in\s+(this\s+)?project\b/i.test(msg);
                 });
 
                 if (isAlreadyInProject) {

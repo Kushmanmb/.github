@@ -51,7 +51,7 @@ runs:
         path: mining-pool-assets.zip
         key: mining-pool-assets-${{ steps.asset-hash.outputs.hash }}
         restore-keys: |
-          mining-pool-assets-${{ steps.asset-hash.outputs.hash }}-
+          mining-pool-assets-${{ steps.asset-hash.outputs.hash }}
 
     # Cache miss is success with cache-hit=false; only real errors (network, permissions) fail the step.
     - name: Restore cached promo video assets
@@ -61,7 +61,7 @@ runs:
         path: promo-video-assets.zip
         key: promo-video-assets-${{ steps.asset-hash.outputs.hash }}
         restore-keys: |
-          promo-video-assets-${{ steps.asset-hash.outputs.hash }}-
+          promo-video-assets-${{ steps.asset-hash.outputs.hash }}
 
     - name: Unzip mining pool assets before sync
       continue-on-error: true

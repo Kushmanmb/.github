@@ -148,7 +148,9 @@ jobs:
 
               if (hasNextPage) {
                 console.warn(`Stopped after ${MAX_PAGES} pages; more project items may exist.`);
-              }
+                const message = `Stopped after ${MAX_PAGES} pages; more project items may exist. Failing to avoid using incomplete project data.`;
+                console.error(message);
+                throw new Error(message);
 
               // Find the project item that belongs to the target project
               const projectItem = projectItems.find(item => item.project.number === projectNumber);

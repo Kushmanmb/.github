@@ -33,6 +33,17 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Compute paths
+      id: paths
+      shell: bash
+      run: |
+        # Normalize working-directory: treat '.' or empty as root of checkout
+        if [[ "${{ inputs.working-directory }}" == "." || -z "${{ inputs.working-directory }}" ]]; then
+          echo "full-path=${{ inputs.checkout-path }}" >> $GITHUB_OUTPUT
+        else
+          echo "full-path=${{ inputs.checkout-path }}/${{ inputs.working-directory }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -46,13 +57,13 @@ runs:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
         cache: 'npm'
-        cache-dependency-path: '${{ inputs.checkout-path }}/${{ inputs.working-directory }}/package-lock.json'
+        cache-dependency-path: '${{ steps.paths.outputs.full-path }}/package-lock.json'
 
     - name: Cache node_modules
       uses: actions/cache@v4
       with:
-        path: ${{ inputs.checkout-path }}/${{ inputs.working-directory }}/node_modules
-        key: ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-${{ hashFiles(format('{0}/{1}/package-lock.json', inputs.checkout-path, inputs.working-directory)) }}
+        path: ${{ steps.paths.outputs.full-path }}/node_modules
+        key: ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-${{ hashFiles(format('{0}/package-lock.json', steps.paths.outputs.full-path)) }}
         restore-keys: |
           ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-
           ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-
@@ -61,10 +72,10 @@ runs:
       if: inputs.flavor == 'dev'
       shell: bash
       run: npm ci
-      working-directory: ${{ inputs.checkout-path }}/${{ inputs.working-directory }}
+      working-directory: ${{ steps.paths.outputs.full-path }}
 
     - name: Install dependencies (prod)
       if: inputs.flavor == 'prod'
       shell: bash
       run: npm ci --omit=dev --omit=optional
-      working-directory: ${{ inputs.checkout-path }}/${{ inputs.working-directory }}
+      working-directory: ${{ steps.paths.outputs.full-path }}

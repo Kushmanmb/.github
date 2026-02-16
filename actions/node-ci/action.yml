@@ -33,19 +33,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Checkout (custom ref)
-      if: inputs.checkout-ref != ''
+    - name: Checkout
       uses: actions/checkout@v4
       with:
         path: ${{ inputs.checkout-path }}
+        # When checkout-ref is empty, actions/checkout uses the default github.ref
         ref: ${{ inputs.checkout-ref }}
-        submodules: ${{ inputs.checkout-submodules }}
-    - name: Checkout (default ref)
-      if: inputs.checkout-ref == ''
-      uses: actions/checkout@v4
-      with:
-        path: ${{ inputs.checkout-path }}
-        # When checkout-ref is empty, rely on the default github.ref
         submodules: ${{ inputs.checkout-submodules }}
     - name: Setup Node.js
       uses: actions/setup-node@v4

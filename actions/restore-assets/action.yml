@@ -31,7 +31,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: mining-pool-assets.zip
-        key: mining-pool-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        key: mining-pool-assets-${{ inputs.cache-version }}
         restore-keys: |
           mining-pool-assets-${{ inputs.cache-version }}-
 
@@ -41,7 +41,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: promo-video-assets.zip
-        key: promo-video-assets-${{ inputs.cache-version }}-${{ hashFiles(format('{0}/package.json', inputs.frontend-path), format('{0}/package-lock.json', inputs.frontend-path)) }}
+        key: promo-video-assets-${{ inputs.cache-version }}
         restore-keys: |
           promo-video-assets-${{ inputs.cache-version }}-
 

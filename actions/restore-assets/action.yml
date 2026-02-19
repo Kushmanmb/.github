@@ -30,7 +30,7 @@ runs:
   steps:
     - name: Compute asset cache key from remote SHAs
       id: asset-hash
-      uses: ./.github/actions/compute-asset-hash
+      uses: mempool/.github/actions/compute-asset-hash@master
       with:
         github-token: ${{ inputs.github-token }}
         cache-version: ${{ inputs.cache-version }}

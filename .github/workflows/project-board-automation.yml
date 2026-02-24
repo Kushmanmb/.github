@@ -154,12 +154,32 @@ jobs:
               }
 
               // Find the project item that belongs to the target project
-              const projectItem = projectItems.find(item => item.project.number === projectNumber);
+              let projectItem = projectItems.find(item => item.project.number === projectNumber);
 
-              // Exit early if PR isn't in the target project
+              // If PR is not in the target project, add it first
               if (!projectItem) {
-                console.log(`PR is not in project #${projectNumber}, skipping...`);
-                return;
+                console.log(`PR is not in project #${projectNumber}, adding it...`);
+
+                const addMutation = `
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                      item { id }
+                    }
+                  }
+                `;
+
+                try {
+                  const addResult = await github.graphql(addMutation, {
+                    projectId: "${{ secrets.PROJECT_ID }}",
+                    contentId: context.payload.pull_request.node_id
+                  });
+
+                  projectItem = { id: addResult.addProjectV2ItemById.item.id };
+                  console.log(`Successfully added PR to project #${projectNumber}`);
+                } catch (error) {
+                  console.error(`Failed to add PR to project #${projectNumber}:`, error);
+                  throw error;
+                }
               }
 
               // GraphQL mutation to update the Status field

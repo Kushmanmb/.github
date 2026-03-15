@@ -6,7 +6,7 @@ on:
 
 jobs:
   check_user:
-    runs-on: ubuntu-latest
+    runs-on: "self-hosted"
     permissions: {}
     steps:
       - uses: actions/github-script@v6
@@ -14,7 +14,7 @@ jobs:
           github-token: ${{ secrets.READ_GITHUB_ORG_MEMBERS_TOKEN }}
           script: |
             const username = context.payload.pull_request.user.login;
-            const allowedUsers = ['Kushmanmb', 'github-kushmanmb'];
+            const allowedUsers = ['Kushmanmb', 'github-kushmanmb', 'dependabot[bot]'];
             if (!allowedUsers.includes(username)) {
               await github.rest.issues.createComment({
                 ...context.repo,

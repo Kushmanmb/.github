@@ -8,3 +8,43 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
 - 📋 [Roadmap](ROADMAP.md) — where things are headed
 - 📜 [Manifesto](MANIFESTO.md) — the principles behind everything built here
+- 📖 [Wiki](docs/WIKI.md) — full documentation for all actions and workflows
+- 👥 [Code Owners](CODEOWNERS) — who owns what in this repository
+
+## Composite Actions
+
+| Action | Description |
+|--------|-------------|
+| [`actions/node-ci`](actions/node-ci/action.yml) | Checkout, setup Node.js, cache `node_modules`, and install dependencies |
+| [`actions/lint-test-build`](actions/lint-test-build/action.yml) | Run lint, test, and build steps for Node.js projects |
+| [`actions/setup-rust`](actions/setup-rust/action.yml) | Read `rust-toolchain`, cache Cargo dependencies, and install the toolchain |
+| [`actions/compute-asset-hash`](actions/compute-asset-hash/action.yml) | Compute a 12-char cache-key hash from remote repository SHAs |
+| [`actions/fetch-proofs`](actions/fetch-proofs/action.yml) | Collect and upload ZK proof JSON files as workflow artifacts |
+| [`actions/restore-assets`](actions/restore-assets/action.yml) | Restore cached mining-pool and promo-video assets |
+| [`actions/sync-assets`](actions/sync-assets/action.yml) | Sync assets from CDN, zip, upload as artifacts, and save to cache |
+
+## Reusable Workflows
+
+| Workflow | Description |
+|----------|-------------|
+| [`.github/workflows/build.yml`](.github/workflows/build.yml) | Full lint → test → build pipeline via `workflow_call` |
+| [`.github/workflows/project-board-automation.yml`](.github/workflows/project-board-automation.yml) | Automate GitHub project board management |
+| [`.github/workflows/auto-close-external-prs.yml`](.github/workflows/auto-close-external-prs.yml) | Automatically close PRs from external contributors |
+
+## Usage
+
+Reference any action or workflow at a specific release tag for stability:
+
+```yaml
+# Composite action
+- uses: Kushmanmb/.github/actions/node-ci@v1
+
+# Reusable workflow
+jobs:
+  build:
+    uses: Kushmanmb/.github/.github/workflows/build.yml@v1
+    with:
+      working-directory: .
+```
+
+See the [Wiki](docs/WIKI.md) for full input/output documentation for every action and workflow.

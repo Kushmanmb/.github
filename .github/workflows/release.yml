@@ -1,0 +1,126 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version info
+        id: version
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          # Major version tag, e.g. "v1" from "v1.2.3"
+          MAJOR=$(echo "$TAG" | grep -oE '^v[0-9]+')
+          echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ steps.version.outputs.tag }}';
+
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Release ${tag}`,
+              generate_release_notes: true,
+              draft: false,
+              prerelease: false
+            });
+
+            console.log(`Created release: ${release.html_url}`);
+
+      - name: Update floating major-version tag
+        shell: bash
+        run: |
+          MAJOR="${{ steps.version.outputs.major }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Force-update the floating major tag to point at the new version
+          git tag -f "$MAJOR" "$TAG"
+          git push origin "refs/tags/$MAJOR" --force
+
+          echo "Updated floating tag ${MAJOR} → ${TAG}"
+
+      - name: Label associated pull request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ steps.version.outputs.tag }}';
+
+            // Find the commit the tag points to
+            const { data: tagRef } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `tags/${tag}`
+            });
+
+            const sha = tagRef.object.type === 'tag'
+              ? (await github.rest.git.getTag({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag_sha: tagRef.object.sha
+                })).data.object.sha
+              : tagRef.object.sha;
+
+            // Search for a merged PR associated with this commit
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha
+            });
+
+            const mergedPR = prs.find(pr => pr.merged_at !== null);
+            if (!mergedPR) {
+              console.log('No merged PR found for this tag commit; skipping label step.');
+              return;
+            }
+
+            // Ensure the 'release' label exists
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'release'
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'release',
+                color: '0075ca',
+                description: 'Marks a pull request that introduced a versioned release'
+              });
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: mergedPR.number,
+              labels: ['release']
+            });
+
+            console.log(`Applied 'release' label to PR #${mergedPR.number}`);

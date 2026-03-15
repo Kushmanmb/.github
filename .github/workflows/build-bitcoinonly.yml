@@ -1,0 +1,79 @@
+name: Build bitcoinonly
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or SHA to build'
+        required: false
+        type: string
+        default: 'main'
+      flavor:
+        description: 'Build flavor (dev or prod)'
+        required: false
+        type: choice
+        options:
+          - dev
+          - prod
+        default: 'dev'
+      run-lint:
+        description: 'Whether to run lint step'
+        required: false
+        type: boolean
+        default: true
+      run-test:
+        description: 'Whether to run test step'
+        required: false
+        type: boolean
+        default: true
+      run-build:
+        description: 'Whether to run build step'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout bitcoinonly
+        uses: actions/checkout@v4
+        with:
+          repository: Kushmanmb/bitcoinonly
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+          cache-dependency-path: 'yarn.lock'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-bitcoinonly-${{ inputs.flavor }}-node-24.13.0-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bitcoinonly-${{ inputs.flavor }}-node-24.13.0-
+            ${{ runner.os }}-bitcoinonly-${{ inputs.flavor }}-
+
+      - name: Install dependencies (dev)
+        if: inputs.flavor == 'dev'
+        run: yarn install --frozen-lockfile
+
+      - name: Install dependencies (prod)
+        if: inputs.flavor == 'prod'
+        run: yarn install --frozen-lockfile --production
+
+      - name: Lint, Test, and Build
+        uses: Kushmanmb/.github/actions/lint-test-build@master
+        with:
+          working-directory: '.'
+          flavor: ${{ inputs.flavor }}
+          run-lint: ${{ inputs.run-lint }}
+          run-test: ${{ inputs.run-test }}
+          run-build: ${{ inputs.run-build }}

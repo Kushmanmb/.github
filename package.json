@@ -1,5 +1,5 @@
 {
-  "name": "kushmanmb-github",
+  "name": "kushmanmb kushhub",
   "version": "1.0.0",
   "description": "Kushmanmb shared GitHub Actions and tooling",
   "main": "sha.js",
@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "kushmanmb",
   "license": "ISC",
   "dependencies": {
     "web3": "^4.16.0"

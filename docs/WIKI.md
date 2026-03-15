@@ -363,6 +363,49 @@ No inputs or secrets are required beyond the repository-scoped `READ_GITHUB_ORG_
 
 ---
 
+## sha.js — Secure Hash Algorithm Library
+
+**Path:** `sha.js`
+
+A pure-JavaScript implementation of the SHA family of hash algorithms.  Designed as a drop-in replacement for Node.js's `crypto.createHash` API for the supported algorithms.
+
+### Supported Algorithms
+
+| Algorithm | Output size | Block size |
+|-----------|-------------|------------|
+| `sha1`    | 20 bytes    | 64 bytes   |
+| `sha224`  | 28 bytes    | 64 bytes   |
+| `sha256`  | 32 bytes    | 64 bytes   |
+| `sha384`  | 48 bytes    | 128 bytes  |
+| `sha512`  | 64 bytes    | 128 bytes  |
+
+### Usage
+
+```javascript
+const createHash = require('./sha.js');
+
+// SHA-256
+const hash256 = createHash('sha256').update('hello').digest('hex');
+
+// SHA-512
+const hash512 = createHash('sha512').update('hello').digest('hex');
+
+// SHA-384
+const hash384 = createHash('sha384').update('hello').digest('hex');
+
+// Chained updates and binary output
+const hash = createHash('sha512')
+  .update('part one ')
+  .update('part two')
+  .digest(); // returns a Buffer
+```
+
+### Security
+
+Includes a fix for CVE-2025-9288 / GHSA-95m3-7q98-8xr5: strict input type validation in `update()` prevents hash-state rewind and crafted-object attacks.
+
+---
+
 ## Versioning and Releases
 
 This repository follows [Semantic Versioning](https://semver.org/):

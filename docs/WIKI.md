@@ -48,7 +48,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 |-------|----------|---------|-------------|
 | `node-version` | No | `24.13.0` | Node.js version to use |
 | `checkout-path` | No | `.` | Path to check out the repository into |
-| `working-directory` | **Yes** | — | Working directory for `npm install` (relative to `checkout-path`) |
+| `working-directory` | **Yes** | — | Working directory for `yarn install` (relative to `checkout-path`) |
 | `flavor` | No | `dev` | Build flavor: `dev` (includes devDependencies) or `prod` (production-only) |
 | `cache-prefix` | No | `node` | Prefix added to the cache key |
 | `checkout-submodules` | No | `false` | Whether to recursively check out submodules |
@@ -71,7 +71,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 
 **Path:** `actions/lint-test-build/action.yml`
 
-Runs lint, test, and build steps for a Node.js project.  Each step runs an `npm` script whose name is validated against a strict allowlist pattern before execution.
+Runs lint, test, and build steps for a Node.js project.  Each step runs a `yarn` script whose name is validated against a strict allowlist pattern before execution.
 
 #### Inputs
 
@@ -80,11 +80,11 @@ Runs lint, test, and build steps for a Node.js project.  Each step runs an `npm`
 | `working-directory` | **Yes** | — | Working directory for all commands |
 | `flavor` | No | `dev` | Build flavor; lint and test only run when `flavor == dev` |
 | `run-lint` | No | `true` | Set to `false` to skip the lint step |
-| `lint-script` | No | `lint` | `npm` script name for linting |
+| `lint-script` | No | `lint` | `yarn` script name for linting |
 | `run-test` | No | `true` | Set to `false` to skip the test step |
-| `test-script` | No | `test` | `npm` script name for testing |
+| `test-script` | No | `test` | `yarn` script name for testing |
 | `run-build` | No | `true` | Set to `false` to skip the build step |
-| `build-script` | No | `build` | `npm` script name for building |
+| `build-script` | No | `build` | `yarn` script name for building |
 
 > **Security note:** Script names are validated against `^[a-zA-Z0-9_-]+$`.  Only trusted workflow authors should supply custom script names.
 
@@ -255,7 +255,7 @@ Syncs assets from a CDN, zips them, uploads them as workflow artifacts, and save
 |-------|----------|---------|-------------|
 | `frontend-path` | **Yes** | — | Path to the frontend directory |
 | `github-token` | **Yes** | — | GitHub token for API access |
-| `sync-script` | No | `sync-assets-dev` | `npm` script name for syncing assets |
+| `sync-script` | No | `sync-assets-dev` | `yarn` script name for syncing assets |
 | `cache-version` | No | `v1` | Cache-key fallback when remote SHA lookup fails |
 
 #### Outputs
@@ -291,15 +291,15 @@ A `workflow_call` pipeline that runs Node.js lint → test → build steps using
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `working-directory` | **Yes** | — | Working directory for `npm` commands |
+| `working-directory` | **Yes** | — | Working directory for `yarn` commands |
 | `node-version` | No | `24.13.0` | Node.js version |
 | `flavor` | No | `dev` | Build flavor (`dev` or `prod`) |
 | `run-lint` | No | `true` | Whether to run the lint step |
-| `lint-script` | No | `lint` | `npm` script name for linting |
+| `lint-script` | No | `lint` | `yarn` script name for linting |
 | `run-test` | No | `true` | Whether to run the test step |
-| `test-script` | No | `test` | `npm` script name for testing |
+| `test-script` | No | `test` | `yarn` script name for testing |
 | `run-build` | No | `true` | Whether to run the build step |
-| `build-script` | No | `build` | `npm` script name for building |
+| `build-script` | No | `build` | `yarn` script name for building |
 | `cache-prefix` | No | `node` | Prefix for the cache key |
 
 #### Example

@@ -15,6 +15,8 @@ Full reference documentation for every composite action and reusable workflow pu
    - [fetch-proofs](#fetch-proofs)
    - [restore-assets](#restore-assets)
    - [sync-assets](#sync-assets)
+   - [install-wallet](#install-wallet)
+   - [manage-links](#manage-links)
 3. [Reusable Workflows](#reusable-workflows)
    - [build](#build)
    - [project-board-automation](#project-board-automation)
@@ -275,6 +277,106 @@ Syncs assets from a CDN, zips them, uploads them as workflow artifacts, and save
     frontend-path: frontend
     github-token: ${{ secrets.GITHUB_TOKEN }}
     sync-script: sync-assets-dev
+```
+
+---
+
+### install-wallet
+
+**Path:** `actions/install-wallet/action.yml`
+
+Derives an embedded signing key from a user identity string using two rounds of SHA-256, then installs a wallet configuration file.  The derived private key is immediately masked in the runner's log and is never written to disk; only the public Ethereum-style address is persisted.
+
+#### Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `user-identity` | **Yes** | — | Identity string (e.g. `github.actor`) used to derive the embedded signing key.  Must be alphanumeric with hyphens, underscores, dots, or `@` signs only. |
+| `key-salt` | No | `''` | Additional salt mixed into the key-derivation hash for extra uniqueness |
+| `wallet-path` | No | `.wallet` | Directory where `wallet.json` will be written |
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `wallet-address` | Ethereum-style hex address derived from the embedded signing key (`0x`-prefixed, 40 hex chars) |
+
+#### wallet.json schema
+
+```json
+{
+  "address":   "0x<40-hex-chars>",
+  "identity":  "<user-identity input>",
+  "key_type":  "sha256-embedded"
+}
+```
+
+#### Example
+
+```yaml
+- name: Install wallet
+  id: wallet
+  uses: Kushmanmb/.kushhub.inc/actions/install-wallet@v1
+  with:
+    user-identity: ${{ github.actor }}
+    key-salt: ${{ github.run_id }}
+    wallet-path: .wallet
+
+- name: Use wallet address
+  run: echo "Wallet address is ${{ steps.wallet.outputs.wallet-address }}"
+```
+
+---
+
+### manage-links
+
+**Path:** `actions/manage-links/action.yml`
+
+Reads a JSON portal registry (`links.json` by default), issues an HTTP `GET` against every entry, and emits a structured report.  Optionally fails the step when any link returns a non-2xx response.
+
+#### Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `links-file` | No | `links.json` | Path to the JSON file containing portal definitions (must have a top-level `"portals"` array with `"name"` and `"url"` fields) |
+| `fail-on-error` | No | `false` | Set to `"true"` to fail the step if any link returns a non-2xx HTTP response |
+| `timeout` | No | `10` | Per-URL connection timeout in seconds |
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `report` | JSON array summarising every link check — each item has `name`, `url`, `status` (`"ok"` or `"error"`), and `http_code` |
+| `all-ok` | `"true"` if every link returned a 2xx response, `"false"` otherwise |
+
+#### links.json schema
+
+```json
+{
+  "portals": [
+    {
+      "name":  "GitHub",
+      "url":   "https://github.com/Kushmanmb",
+      "badge": "https://img.shields.io/badge/GitHub-Kushmanmb-0075ff?logo=github&logoColor=white"
+    }
+  ]
+}
+```
+
+The `badge` field is optional and is used exclusively by `profile/README.md` to render clickable shields.io badges.
+
+#### Example
+
+```yaml
+- name: Check portal links
+  id: links
+  uses: Kushmanmb/.kushhub.inc/actions/manage-links@v1
+  with:
+    links-file: links.json
+    fail-on-error: 'true'
+
+- name: Print report
+  run: echo '${{ steps.links.outputs.report }}'
 ```
 
 ---

@@ -1,0 +1,82 @@
+name: 'Install Wallet'
+description: 'Derive an embedded signing key from user identity (SHA-256) and install a wallet configuration file. The derived private key is masked and never written to disk; only the public address is persisted.'
+
+inputs:
+  user-identity:
+    description: 'Identity string (e.g. github.actor) used to derive the embedded signing key. Must be alphanumeric with hyphens, underscores, dots, or @ signs only.'
+    required: true
+  key-salt:
+    description: 'Additional salt mixed into the key-derivation hash for extra uniqueness'
+    required: false
+    default: ''
+  wallet-path:
+    description: 'Directory where wallet.json will be written'
+    required: false
+    default: '.wallet'
+
+outputs:
+  wallet-address:
+    description: 'Ethereum-style hex address derived from the embedded signing key (0x-prefixed, 40 hex chars)'
+    value: ${{ steps.derive.outputs.wallet-address }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Derive signing key and install wallet
+      id: derive
+      shell: bash
+      env:
+        USER_IDENTITY: ${{ inputs.user-identity }}
+        KEY_SALT: ${{ inputs.key-salt }}
+        WALLET_PATH: ${{ inputs.wallet-path }}
+      run: |
+        # --- input validation --------------------------------------------------
+        if [[ -z "$USER_IDENTITY" ]]; then
+          echo "::error::user-identity must not be empty."
+          exit 1
+        fi
+
+        if [[ ! "$USER_IDENTITY" =~ ^[a-zA-Z0-9._@-]+$ ]]; then
+          echo "::error::user-identity must contain only alphanumeric characters, hyphens, underscores, dots, or @ signs."
+          exit 1
+        fi
+
+        # --- key derivation (embedded logic) ----------------------------------
+        # HMAC-SHA256 keyed with an application-specific domain label is
+        # significantly stronger than bare SHA-256 because the fixed key
+        # makes the derived value domain-separated and harder to brute-force
+        # across unrelated contexts.  For purely offline, production-grade
+        # keys, prefer PBKDF2/scrypt/Argon2; this derivation is designed for
+        # ephemeral CI/workflow identity purposes.
+        DOMAIN_KEY="kushmanmb-wallet-key-derivation-v1"
+        SIG_KEY=$(printf '%s:%s' "$USER_IDENTITY" "$KEY_SALT" \
+          | openssl dgst -sha256 -hmac "$DOMAIN_KEY" \
+          | awk '{print $NF}')
+
+        # Mask the derived signing key so it never appears in logs
+        echo "::add-mask::$SIG_KEY"
+
+        # Round 2: HMAC-SHA256(signing_key) → wallet address
+        # SHA-256 always produces 64 hex chars; the last 40 are taken to
+        # mirror the Ethereum-style address derivation (20 bytes / 40 hex chars).
+        FULL_HASH=$(printf '%s' "$SIG_KEY" \
+          | openssl dgst -sha256 -hmac "$DOMAIN_KEY" \
+          | awk '{print $NF}')
+        WALLET_ADDR="0x${FULL_HASH: -40}"
+
+        # --- write wallet config (public data only) ---------------------------
+        # Normalise empty or '.' to current directory
+        EFFECTIVE_PATH="${WALLET_PATH:-.}"
+        if [[ "$EFFECTIVE_PATH" != "." ]]; then
+          mkdir -p "$EFFECTIVE_PATH"
+        fi
+        WALLET_FILE="${EFFECTIVE_PATH%/}/wallet.json"
+
+        # Atomically write wallet.json (no private key stored)
+        printf '{\n  "address": "%s",\n  "identity": "%s",\n  "key_type": "sha256-embedded"\n}\n' \
+          "$WALLET_ADDR" "$USER_IDENTITY" > "$WALLET_FILE"
+
+        echo "Wallet installed at $WALLET_FILE"
+        echo "  address: $WALLET_ADDR"
+
+        echo "wallet-address=$WALLET_ADDR" >> "$GITHUB_OUTPUT"

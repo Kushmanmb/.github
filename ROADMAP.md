@@ -43,3 +43,6 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 - [x] Create `fetch-proofs` composite action for ZK proof JSON artifacts
 - [x] Add reusable `build` workflow (`workflow_call`) with full input pass-through
 - [x] Establish project-board automation workflow
+- [x] Add `install-wallet` composite action — derive embedded signing key from user identity and install wallet configuration
+- [x] Add `manage-links` composite action and `links.json` portal registry — validate and report on social portal links
+- [x] Add clickable social-portal badges to `profile/README.md`

@@ -1,0 +1,114 @@
+name: 'Install Wallet'
+description: 'Derive an embedded signing key from user identity (HMAC-SHA256) and install a wallet configuration file. The derived private key is masked and never written to disk; only the public address and optional ENS name are persisted.'
+
+inputs:
+  user-identity:
+    description: 'Identity string (e.g. github.actor) used to derive the embedded signing key. Must be alphanumeric with hyphens, underscores, dots, or @ signs only.'
+    required: true
+  key-salt:
+    description: 'Additional salt mixed into the key-derivation hash for extra uniqueness'
+    required: false
+    default: ''
+  wallet-path:
+    description: 'Directory where wallet.json will be written'
+    required: false
+    default: '.wallet'
+  ens-name:
+    description: 'ENS name to associate with this wallet (e.g. kushmanmb.eth). Written into wallet.json as the human-readable identity path. Must be a valid ENS name (label.eth or sub.label.eth).'
+    required: false
+    default: ''
+  tokens-file:
+    description: 'Path to tokens.json; when provided the ENS name is read from tokens.ens.name if ens-name input is empty'
+    required: false
+    default: 'tokens.json'
+
+outputs:
+  wallet-address:
+    description: 'Ethereum-style hex address derived from the embedded signing key (0x-prefixed, 40 hex chars)'
+    value: ${{ steps.derive.outputs.wallet-address }}
+  ens-name:
+    description: 'ENS name written into wallet.json (empty string if not configured)'
+    value: ${{ steps.derive.outputs.ens-name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Derive signing key and install wallet
+      id: derive
+      shell: bash
+      env:
+        USER_IDENTITY: ${{ inputs.user-identity }}
+        KEY_SALT: ${{ inputs.key-salt }}
+        WALLET_PATH: ${{ inputs.wallet-path }}
+        ENS_NAME_INPUT: ${{ inputs.ens-name }}
+        TOKENS_FILE: ${{ inputs.tokens-file }}
+      run: |
+        # --- input validation --------------------------------------------------
+        if [[ -z "$USER_IDENTITY" ]]; then
+          echo "::error::user-identity must not be empty."
+          exit 1
+        fi
+
+        if [[ ! "$USER_IDENTITY" =~ ^[a-zA-Z0-9._@-]+$ ]]; then
+          echo "::error::user-identity must contain only alphanumeric characters, hyphens, underscores, dots, or @ signs."
+          exit 1
+        fi
+
+        # --- resolve ENS name (input takes priority; fall back to tokens.json) -
+        ENS_NAME="$ENS_NAME_INPUT"
+        if [[ -z "$ENS_NAME" && -f "$TOKENS_FILE" ]] && command -v jq &>/dev/null; then
+          ENS_NAME=$(jq -r '.ens.name // empty' "$TOKENS_FILE" 2>/dev/null || true)
+        fi
+
+        # Validate ENS name if provided (label.tld or sub.label.tld)
+        if [[ -n "$ENS_NAME" && ! "$ENS_NAME" =~ ^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$ ]]; then
+          echo "::error::ens-name must be a valid ENS name (e.g. kushmanmb.eth). Got: $ENS_NAME"
+          exit 1
+        fi
+
+        # --- key derivation (embedded logic) ----------------------------------
+        # HMAC-SHA256 keyed with an application-specific domain label is
+        # significantly stronger than bare SHA-256 because the fixed key
+        # makes the derived value domain-separated and harder to brute-force
+        # across unrelated contexts.  For purely offline, production-grade
+        # keys, prefer PBKDF2/scrypt/Argon2; this derivation is designed for
+        # ephemeral CI/workflow identity purposes.
+        DOMAIN_KEY="kushmanmb-wallet-key-derivation-v1"
+        SIG_KEY=$(printf '%s:%s' "$USER_IDENTITY" "$KEY_SALT" \
+          | openssl dgst -sha256 -hmac "$DOMAIN_KEY" \
+          | awk '{print $NF}')
+
+        # Mask the derived signing key so it never appears in logs
+        echo "::add-mask::$SIG_KEY"
+
+        # Round 2: HMAC-SHA256(signing_key) → wallet address
+        # SHA-256 always produces 64 hex chars; the last 40 are taken to
+        # mirror the Ethereum-style address derivation (20 bytes / 40 hex chars).
+        FULL_HASH=$(printf '%s' "$SIG_KEY" \
+          | openssl dgst -sha256 -hmac "$DOMAIN_KEY" \
+          | awk '{print $NF}')
+        WALLET_ADDR="0x${FULL_HASH: -40}"
+
+        # --- write wallet config (public data only) ---------------------------
+        # Normalise empty or '.' to current directory
+        EFFECTIVE_PATH="${WALLET_PATH:-.}"
+        if [[ "$EFFECTIVE_PATH" != "." ]]; then
+          mkdir -p "$EFFECTIVE_PATH"
+        fi
+        WALLET_FILE="${EFFECTIVE_PATH%/}/wallet.json"
+
+        # Build the JSON payload; include ens_name only when set
+        if [[ -n "$ENS_NAME" ]]; then
+          printf '{\n  "address": "%s",\n  "ens_name": "%s",\n  "identity": "%s",\n  "key_type": "hmac-sha256-embedded",\n  "path": "identity → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → address"\n}\n' \
+            "$WALLET_ADDR" "$ENS_NAME" "$USER_IDENTITY" > "$WALLET_FILE"
+          echo "  ens_name: $ENS_NAME"
+        else
+          printf '{\n  "address": "%s",\n  "identity": "%s",\n  "key_type": "hmac-sha256-embedded",\n  "path": "identity → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → address"\n}\n' \
+            "$WALLET_ADDR" "$USER_IDENTITY" > "$WALLET_FILE"
+        fi
+
+        echo "Wallet installed at $WALLET_FILE"
+        echo "  address: $WALLET_ADDR"
+
+        echo "wallet-address=$WALLET_ADDR" >> "$GITHUB_OUTPUT"
+        echo "ens-name=$ENS_NAME" >> "$GITHUB_OUTPUT"

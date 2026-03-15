@@ -8,3 +8,15 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
 - 📋 [Roadmap](https://github.com/Kushmanmb/.kushhub.inc/blob/master/ROADMAP.md) — where things are headed
 - 📜 [Manifesto](https://github.com/Kushmanmb/.kushhub.inc/blob/master/MANIFESTO.md) — the principles behind everything built here
+
+---
+
+### Connect & Explore
+
+[![GitHub](https://img.shields.io/badge/GitHub-Kushmanmb-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb)
+[![Roadmap](https://img.shields.io/badge/Roadmap-view-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb/.kushhub.inc/blob/master/ROADMAP.md)
+[![Manifesto](https://img.shields.io/badge/Manifesto-read-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb/.kushhub.inc/blob/master/MANIFESTO.md)
+[![Wiki](https://img.shields.io/badge/Wiki-docs-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb/.kushhub.inc/blob/master/docs/WIKI.md)
+[![npm](https://img.shields.io/badge/npm-kushmanmb-cb3837?logo=npm&logoColor=white)](https://www.npmjs.com/~kushmanmb)
+[![ENS](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
+[![Etherscan](https://img.shields.io/badge/Etherscan-portal-21325b?logo=ethereum&logoColor=white)](https://etherscan.io)

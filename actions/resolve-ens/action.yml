@@ -1,0 +1,138 @@
+name: 'Resolve ENS / Build Token Path'
+description: 'Read tokens.json, validate the identity → address → ENS path, and emit the full consolidated token chain. Confirms the embedded wallet address is consistently bound to the kushmanmb.eth ENS name.'
+
+inputs:
+  tokens-file:
+    description: 'Path to the consolidated token registry (tokens.json)'
+    required: false
+    default: 'tokens.json'
+  wallet-address:
+    description: 'Wallet address produced by the install-wallet action (0x-prefixed). When provided it is written into the path report.'
+    required: false
+    default: ''
+  user-identity:
+    description: 'GitHub actor / user identity that was used to derive the wallet (for the path report)'
+    required: false
+    default: ''
+  fail-on-missing-ens:
+    description: 'Set to "true" to fail the step when no ENS name is found in tokens.json'
+    required: false
+    default: 'false'
+
+outputs:
+  ens-name:
+    description: 'ENS name read from tokens.json (e.g. kushmanmb.eth)'
+    value: ${{ steps.resolve.outputs.ens-name }}
+  ens-app-url:
+    description: 'ENS app URL for the resolved name'
+    value: ${{ steps.resolve.outputs.ens-app-url }}
+  etherscan-url:
+    description: 'Etherscan URL for the wallet address on mainnet'
+    value: ${{ steps.resolve.outputs.etherscan-url }}
+  token-path:
+    description: 'Human-readable string showing the full identity → address → ENS chain'
+    value: ${{ steps.resolve.outputs.token-path }}
+  tokens-summary:
+    description: 'JSON object summarising all registered tokens and the resolved ENS binding'
+    value: ${{ steps.resolve.outputs.tokens-summary }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve ENS and build token path
+      id: resolve
+      shell: bash
+      env:
+        TOKENS_FILE: ${{ inputs.tokens-file }}
+        WALLET_ADDRESS: ${{ inputs.wallet-address }}
+        USER_IDENTITY: ${{ inputs.user-identity }}
+        FAIL_ON_MISSING_ENS: ${{ inputs.fail-on-missing-ens }}
+      run: |
+        # --- validate inputs --------------------------------------------------
+        if [[ ! -f "$TOKENS_FILE" ]]; then
+          echo "::error::tokens-file not found: $TOKENS_FILE"
+          exit 1
+        fi
+
+        if ! command -v jq &>/dev/null; then
+          echo "::error::jq is required but not found on PATH."
+          exit 1
+        fi
+
+        if ! jq -e 'type == "object"' "$TOKENS_FILE" &>/dev/null; then
+          echo "::error::$TOKENS_FILE must be a valid JSON object."
+          exit 1
+        fi
+
+        # --- read ENS configuration ------------------------------------------
+        ENS_NAME=$(jq -r '.ens.name // empty' "$TOKENS_FILE")
+        ENS_NETWORK=$(jq -r '.ens.network // "mainnet"' "$TOKENS_FILE")
+        ENS_CHAIN_ID=$(jq -r '.ens.chain_id // 1' "$TOKENS_FILE")
+        ENS_APP_URL=$(jq -r '.explorers.ens_app // empty' "$TOKENS_FILE")
+        EXPLORER_BASE=$(jq -r '.explorers.mainnet // "https://etherscan.io"' "$TOKENS_FILE")
+
+        if [[ -z "$ENS_NAME" ]]; then
+          echo "::warning::No ENS name found in $TOKENS_FILE (.ens.name)"
+          if [[ "$FAIL_ON_MISSING_ENS" == "true" ]]; then
+            echo "::error::ENS name is required but was not found in $TOKENS_FILE"
+            exit 1
+          fi
+        else
+          echo "ENS name   : $ENS_NAME"
+          echo "Network    : $ENS_NETWORK (chain $ENS_CHAIN_ID)"
+        fi
+
+        # --- derive explorer URLs --------------------------------------------
+        if [[ -z "$ENS_APP_URL" && -n "$ENS_NAME" ]]; then
+          ENS_APP_URL="https://app.ens.domains/${ENS_NAME}"
+        fi
+
+        ETHERSCAN_URL=""
+        if [[ -n "$WALLET_ADDRESS" ]]; then
+          ETHERSCAN_URL="${EXPLORER_BASE}/address/${WALLET_ADDRESS}"
+          echo "Etherscan  : $ETHERSCAN_URL"
+        fi
+
+        # --- build human-readable token path ---------------------------------
+        IDENTITY_PART="${USER_IDENTITY:-<identity>}"
+        ADDRESS_PART="${WALLET_ADDRESS:-<wallet-address>}"
+        ENS_PART="${ENS_NAME:-<ens-name>}"
+
+        TOKEN_PATH="${IDENTITY_PART} → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → ${ADDRESS_PART} → ${ENS_PART}"
+        echo ""
+        echo "Token path : $TOKEN_PATH"
+
+        # --- summarise tokens ------------------------------------------------
+        TOKEN_COUNT=$(jq '.tokens | length' "$TOKENS_FILE")
+        echo "Tokens registered: $TOKEN_COUNT"
+
+        TOKENS_SUMMARY=$(jq -n \
+          --arg ens_name "$ENS_NAME" \
+          --arg ens_network "$ENS_NETWORK" \
+          --argjson ens_chain_id "$ENS_CHAIN_ID" \
+          --arg wallet_address "$WALLET_ADDRESS" \
+          --arg ens_app_url "$ENS_APP_URL" \
+          --arg etherscan_url "$ETHERSCAN_URL" \
+          --arg token_path "$TOKEN_PATH" \
+          --argjson token_count "$TOKEN_COUNT" \
+          '{
+            ens_name: $ens_name,
+            ens_network: $ens_network,
+            ens_chain_id: $ens_chain_id,
+            wallet_address: $wallet_address,
+            ens_app_url: $ens_app_url,
+            etherscan_url: $etherscan_url,
+            token_path: $token_path,
+            token_count: $token_count
+          }')
+
+        echo ""
+        echo "Summary:"
+        echo "$TOKENS_SUMMARY" | jq .
+
+        # --- emit outputs (single-line for GITHUB_OUTPUT) --------------------
+        echo "ens-name=$ENS_NAME" >> "$GITHUB_OUTPUT"
+        echo "ens-app-url=$ENS_APP_URL" >> "$GITHUB_OUTPUT"
+        echo "etherscan-url=$ETHERSCAN_URL" >> "$GITHUB_OUTPUT"
+        echo "token-path=$TOKEN_PATH" >> "$GITHUB_OUTPUT"
+        printf 'tokens-summary=%s\n' "$(echo "$TOKENS_SUMMARY" | jq -c .)" >> "$GITHUB_OUTPUT"

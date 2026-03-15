@@ -43,3 +43,10 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 - [x] Create `fetch-proofs` composite action for ZK proof JSON artifacts
 - [x] Add reusable `build` workflow (`workflow_call`) with full input pass-through
 - [x] Establish project-board automation workflow
+- [x] Add `install-wallet` composite action — derive embedded signing key from user identity and install wallet configuration
+- [x] Add `manage-links` composite action and `links.json` portal registry — validate and report on social portal links
+- [x] Add clickable social-portal badges to `profile/README.md`
+- [x] Add `tokens.json` — consolidated registry of all relevant tokens, chains, and ENS binding for `kushmanmb.eth`
+- [x] Update `install-wallet` — reads `tokens.json` for ENS name; writes full identity → address → ENS path into `wallet.json`
+- [x] Add `resolve-ens` composite action — validates the complete identity → signing key → address → `kushmanmb.eth` token chain
+- [x] Add ENS and Etherscan portal entries to `links.json` and `profile/README.md`

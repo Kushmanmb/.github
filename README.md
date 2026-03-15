@@ -22,6 +22,9 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 | [`actions/fetch-proofs`](actions/fetch-proofs/action.yml) | Collect and upload ZK proof JSON files as workflow artifacts |
 | [`actions/restore-assets`](actions/restore-assets/action.yml) | Restore cached mining-pool and promo-video assets |
 | [`actions/sync-assets`](actions/sync-assets/action.yml) | Sync assets from CDN, zip, upload as artifacts, and save to cache |
+| [`actions/install-wallet`](actions/install-wallet/action.yml) | Derive an embedded signing key from user identity and install a wallet configuration |
+| [`actions/manage-links`](actions/manage-links/action.yml) | Validate and report on social portal links defined in `links.json` |
+| [`actions/resolve-ens`](actions/resolve-ens/action.yml) | Read `tokens.json`, validate the identity → address → ENS path, and emit the consolidated token chain |
 
 ## Reusable Workflows
 

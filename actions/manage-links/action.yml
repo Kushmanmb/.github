@@ -1,0 +1,119 @@
+name: 'Manage Links / Social Portals'
+description: 'Read a JSON portal registry, verify each URL is reachable, and emit a structured report. Optionally fail the step when any link returns a non-2xx response.'
+
+inputs:
+  links-file:
+    description: 'Path to the JSON file containing portal link definitions (must have a top-level "portals" array with "name" and "url" fields)'
+    required: false
+    default: 'links.json'
+  fail-on-error:
+    description: 'Set to "true" to fail the step if any link returns a non-2xx HTTP response'
+    required: false
+    default: 'false'
+  timeout:
+    description: 'Per-URL connection timeout in seconds'
+    required: false
+    default: '10'
+
+outputs:
+  report:
+    description: 'JSON array summarising every link check (name, url, status, http_code)'
+    value: ${{ steps.check.outputs.report }}
+  all-ok:
+    description: '"true" if every link returned a 2xx HTTP response, "false" otherwise'
+    value: ${{ steps.check.outputs.all-ok }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs and check links
+      id: check
+      shell: bash
+      env:
+        LINKS_FILE: ${{ inputs.links-file }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        # --- input validation -------------------------------------------------
+        if [[ ! -f "$LINKS_FILE" ]]; then
+          echo "::error::links-file not found: $LINKS_FILE"
+          exit 1
+        fi
+
+        # Validate timeout is a non-negative integer (0 = no curl timeout; >0 = seconds)
+        if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
+          echo "::error::timeout must be a non-negative integer (got: $TIMEOUT)"
+          exit 1
+        fi
+
+        # Ensure jq is available
+        if ! command -v jq &>/dev/null; then
+          echo "::error::jq is required but not found on PATH."
+          exit 1
+        fi
+
+        # Validate that the file is well-formed JSON with a portals array
+        if ! jq -e '.portals | if type == "array" then . else error end' "$LINKS_FILE" &>/dev/null; then
+          echo "::error::$LINKS_FILE must contain a top-level JSON object with a \"portals\" array."
+          exit 1
+        fi
+
+        # --- link checks ------------------------------------------------------
+        ALL_OK=true
+        REPORT_ITEMS=()
+
+        while IFS= read -r PORTAL; do
+          NAME=$(printf '%s' "$PORTAL" | jq -r '.name // "unknown"')
+          URL=$(printf '%s' "$PORTAL" | jq -r '.url // ""')
+
+          if [[ -z "$URL" ]]; then
+            echo "::warning::Portal \"$NAME\" has no url field; skipping."
+            continue
+          fi
+
+          HTTP_CODE=$(curl --silent --output /dev/null \
+            --write-out "%{http_code}" \
+            --max-time "$TIMEOUT" \
+            --max-redirs 5 \
+            --location \
+            "$URL" 2>/dev/null) || HTTP_CODE="ERR"
+
+          # curl returns "000" when it cannot connect at all; treat as error
+          if [[ "$HTTP_CODE" == "000" ]]; then
+            HTTP_CODE="ERR"
+          fi
+
+          if [[ "$HTTP_CODE" =~ ^2 ]]; then
+            STATUS="ok"
+            echo "  ✓  $NAME → $URL  (HTTP $HTTP_CODE)"
+          else
+            STATUS="error"
+            ALL_OK=false
+            echo "  ✗  $NAME → $URL  (HTTP $HTTP_CODE)"
+            echo "::warning::Link check failed for \"$NAME\": $URL returned HTTP $HTTP_CODE"
+          fi
+
+          REPORT_ITEMS+=(
+            "$(jq -n \
+              --arg name "$NAME" \
+              --arg url "$URL" \
+              --arg status "$STATUS" \
+              --arg http_code "$HTTP_CODE" \
+              '{name: $name, url: $url, status: $status, http_code: $http_code}')"
+          )
+        done < <(jq -c '.portals[]' "$LINKS_FILE")
+
+        # --- build JSON report ------------------------------------------------
+        REPORT=$(printf '%s\n' "${REPORT_ITEMS[@]}" | jq -sc '.')
+
+        echo "all-ok=$ALL_OK" >> "$GITHUB_OUTPUT"
+        # Emit the report on a single line so GITHUB_OUTPUT parsing works correctly
+        printf 'report=%s\n' "$REPORT" >> "$GITHUB_OUTPUT"
+
+        echo ""
+        echo "Result: all-ok=$ALL_OK"
+
+        if [[ "$FAIL_ON_ERROR" == "true" && "$ALL_OK" == "false" ]]; then
+          echo "::error::One or more portal links failed the reachability check."
+          exit 1
+        fi

@@ -12,11 +12,10 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 
 ## Short Term (Next 3 Months)
 
-- [ ] Publish versioned releases for all composite actions under `actions/`
 - [ ] Add integration test matrix (Node 18 / 20 / 22) to the reusable build workflow
 - [ ] Expand `setup-rust` to support custom toolchain channel and component selection
 - [ ] Add caching layer to `fetch-proofs` for incremental artifact uploads
-- [ ] Document each action's full input/output contract in its `README.md`
+- [x] Document each action's full input/output contract in its `README.md`
 
 ## Medium Term (3–6 Months)
 
@@ -36,6 +35,9 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 
 ## Completed
 
+- [x] Publish versioned releases for all composite actions under `actions/` (release workflow + floating tag)
+- [x] Document each action's full input/output contract (`docs/WIKI.md`)
+- [x] Add `CODEOWNERS` file for code-ownership tracking
 - [x] Fix CVE-2025-9288 — strict input validation in `sha.js` to prevent hash-rewind and crafted-data attacks
 - [x] Add `auto-close-external-prs` workflow for repository hygiene
 - [x] Create `fetch-proofs` composite action for ZK proof JSON artifacts

@@ -6,3 +6,4 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
 - 📋 [Roadmap](../ROADMAP.md) — where things are headed
 - 📜 [Manifesto](../MANIFESTO.md) — the principles behind everything built here
+- 📖 [Wiki](../docs/WIKI.md) — full documentation for all actions and workflows

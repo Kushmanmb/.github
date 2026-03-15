@@ -412,6 +412,7 @@ Reads `tokens.json`, validates the full `identity → signing key → wallet add
 | `etherscan-url` | Etherscan address URL for the wallet address on mainnet |
 | `token-path` | Human-readable string showing the full identity → address → ENS chain |
 | `tokens-summary` | JSON object summarising all registered tokens and the resolved ENS binding |
+| `verification-log` | Multi-line human-readable docs-verification report covering every resolved input, output, and the full token chain.  Also written to the workflow run's step summary automatically. |
 
 #### tokens.json schema
 
@@ -471,6 +472,48 @@ Kushmanmb → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → 0x<add
     echo "ENS app    : ${{ steps.ens.outputs.ens-app-url }}"
     echo "Etherscan  : ${{ steps.ens.outputs.etherscan-url }}"
     echo "Token path : ${{ steps.ens.outputs.token-path }}"
+
+- name: Print docs verification log
+  run: echo "${{ steps.ens.outputs.verification-log }}"
+```
+
+#### verification-log sample output
+
+```
+================================================================
+  Resolve-ENS — Docs Verification Log                2026-03-15T18:00:00Z
+================================================================
+  Inputs
+  ──────────────────────────────────────────────────
+  tokens-file    : tokens.json
+  user-identity  : Kushmanmb
+  wallet-address : 0x<address>
+
+  ENS Binding
+  ──────────────────────────────────────────────────
+  ens.name       : kushmanmb.eth
+  ens.network    : mainnet (chain 1)
+  ens.registry   : 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
+  ens.resolver   : 0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41
+  ens-app-url    : https://app.ens.domains/kushmanmb.eth
+  etherscan-url  : https://etherscan.io/address/0x<address>
+
+  Wallet / Key Derivation
+  ──────────────────────────────────────────────────
+  key_type       : hmac-sha256-embedded
+  domain_key     : kushmanmb-wallet-key-derivation-v1
+  derivation     : last-40-hex-of-hmac-sha256-round2
+  wallet.path    : identity → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → 0x<address>
+
+  Registered Tokens (2)
+  ──────────────────────────────────────────────────
+  • ETH (Ether) — chain 1 [mainnet] [native]
+  • ETH (Ether) — chain 11155111 [sepolia] [native]
+
+  Full Token Chain
+  ──────────────────────────────────────────────────
+  token-path     : Kushmanmb → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → 0x<address> → kushmanmb.eth
+================================================================
 ```
 
 ---

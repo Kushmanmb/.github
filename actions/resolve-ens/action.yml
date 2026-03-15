@@ -35,6 +35,9 @@ outputs:
   tokens-summary:
     description: 'JSON object summarising all registered tokens and the resolved ENS binding'
     value: ${{ steps.resolve.outputs.tokens-summary }}
+  verification-log:
+    description: 'Human-readable docs-verification report covering every resolved input, output, and the full token chain'
+    value: ${{ steps.resolve.outputs.verification-log }}
 
 runs:
   using: 'composite'
@@ -130,9 +133,70 @@ runs:
         echo "Summary:"
         echo "$TOKENS_SUMMARY" | jq .
 
+        # --- build human-readable docs-verification log ----------------------
+        TOKENS_LIST=$(jq -r 'if (.tokens | length) == 0 then "  <no tokens registered>" else .tokens[] | "  • \(.symbol) (\(.name)) — chain \(.chain_id) [\(.network)] [\(.type)]" end' "$TOKENS_FILE")
+        ENS_REGISTRY=$(jq -r '.ens.registry // "n/a"' "$TOKENS_FILE")
+        ENS_RESOLVER=$(jq -r '.ens.resolver // "n/a"' "$TOKENS_FILE")
+        WALLET_KEY_TYPE=$(jq -r '.wallet.key_type // "n/a"' "$TOKENS_FILE")
+        WALLET_DOMAIN_KEY=$(jq -r '.wallet.domain_key // "n/a"' "$TOKENS_FILE")
+        WALLET_PATH_FIELD=$(jq -r '.wallet.path // "n/a"' "$TOKENS_FILE")
+        ADDRESS_DERIVATION=$(jq -r '.wallet.address_derivation // "n/a"' "$TOKENS_FILE")
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        VERIFICATION_LOG="================================================================
+  Resolve-ENS — Docs Verification Log                ${TIMESTAMP}
+================================================================
+  Inputs
+  ──────────────────────────────────────────────────
+  tokens-file    : ${TOKENS_FILE}
+  user-identity  : ${USER_IDENTITY:-<not provided>}
+  wallet-address : ${WALLET_ADDRESS:-<not provided>}
+
+  ENS Binding
+  ──────────────────────────────────────────────────
+  ens.name       : ${ENS_NAME:-<not resolved>}
+  ens.network    : ${ENS_NETWORK:-n/a} (chain ${ENS_CHAIN_ID:-n/a})
+  ens.registry   : ${ENS_REGISTRY}
+  ens.resolver   : ${ENS_RESOLVER}
+  ens-app-url    : ${ENS_APP_URL:-<not resolved>}
+  etherscan-url  : ${ETHERSCAN_URL:-<not resolved>}
+
+  Wallet / Key Derivation
+  ──────────────────────────────────────────────────
+  key_type       : ${WALLET_KEY_TYPE}
+  domain_key     : ${WALLET_DOMAIN_KEY}
+  derivation     : ${ADDRESS_DERIVATION}
+  wallet.path    : ${WALLET_PATH_FIELD}
+
+  Registered Tokens (${TOKEN_COUNT})
+  ──────────────────────────────────────────────────
+${TOKENS_LIST}
+
+  Full Token Chain
+  ──────────────────────────────────────────────────
+  token-path     : ${TOKEN_PATH}
+================================================================"
+
+        echo ""
+        echo "$VERIFICATION_LOG"
+
+        # --- write verification log to step summary --------------------------
+        {
+          echo "## Resolve-ENS Verification Log"
+          echo '```'
+          echo "$VERIFICATION_LOG"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
         # --- emit outputs (single-line for GITHUB_OUTPUT) --------------------
         echo "ens-name=$ENS_NAME" >> "$GITHUB_OUTPUT"
         echo "ens-app-url=$ENS_APP_URL" >> "$GITHUB_OUTPUT"
         echo "etherscan-url=$ETHERSCAN_URL" >> "$GITHUB_OUTPUT"
         echo "token-path=$TOKEN_PATH" >> "$GITHUB_OUTPUT"
         printf 'tokens-summary=%s\n' "$(echo "$TOKENS_SUMMARY" | jq -c .)" >> "$GITHUB_OUTPUT"
+        # verification-log uses the multiline heredoc syntax for GITHUB_OUTPUT
+        {
+          echo "verification-log<<__VLOG_EOF__"
+          echo "$VERIFICATION_LOG"
+          echo "__VLOG_EOF__"
+        } >> "$GITHUB_OUTPUT"

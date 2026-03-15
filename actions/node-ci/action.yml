@@ -1,5 +1,5 @@
 name: 'Node.js CI Setup'
-description: 'Checkout repository, setup Node.js, cache node_modules, and install dependencies'
+description: 'Checkout repository, setup Node.js, cache node_modules, and install dependencies using yarn'
 
 inputs:
   node-version:
@@ -11,7 +11,7 @@ inputs:
     required: false
     default: '.'
   working-directory:
-    description: 'Working directory for npm install (relative to checkout-path)'
+    description: 'Working directory for yarn install (relative to checkout-path)'
     required: true
   flavor:
     description: 'Build flavor (dev or prod)'
@@ -56,14 +56,14 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
-        cache: 'npm'
-        cache-dependency-path: '${{ steps.paths.outputs.full-path }}/package-lock.json'
+        cache: 'yarn'
+        cache-dependency-path: '${{ steps.paths.outputs.full-path }}/yarn.lock'
 
     - name: Cache node_modules
       uses: actions/cache@v4
       with:
         path: ${{ steps.paths.outputs.full-path }}/node_modules
-        key: ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-${{ hashFiles(format('{0}/package-lock.json', steps.paths.outputs.full-path)) }}
+        key: ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-${{ hashFiles(format('{0}/yarn.lock', steps.paths.outputs.full-path)) }}
         restore-keys: |
           ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-node-${{ inputs.node-version }}-
           ${{ runner.os }}-${{ inputs.cache-prefix }}-${{ inputs.flavor }}-
@@ -71,11 +71,11 @@ runs:
     - name: Install dependencies (dev)
       if: inputs.flavor == 'dev'
       shell: bash
-      run: npm ci
+      run: yarn install --frozen-lockfile
       working-directory: ${{ steps.paths.outputs.full-path }}
 
     - name: Install dependencies (prod)
       if: inputs.flavor == 'prod'
       shell: bash
-      run: npm ci --omit=dev --omit=optional
+      run: yarn install --frozen-lockfile --production
       working-directory: ${{ steps.paths.outputs.full-path }}

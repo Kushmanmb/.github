@@ -1,5 +1,5 @@
 name: 'Sync and Cache Assets'
-description: 'Sync assets from CDN, zip, upload as artifacts, and save to cache. Script input must be an npm script name only and should only be set by trusted workflow authors.'
+description: 'Sync assets from CDN, zip, upload as artifacts, and save to cache. Script input must be a yarn script name only and should only be set by trusted workflow authors.'
 
 inputs:
   frontend-path:
@@ -9,7 +9,7 @@ inputs:
     description: 'GitHub token for API access'
     required: true
   sync-script:
-    description: 'npm script name for syncing assets (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    description: 'yarn script name for syncing assets (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
     required: false
     default: 'sync-assets-dev'
   cache-version:
@@ -84,7 +84,7 @@ runs:
           echo "::error::sync-script must match ^[a-zA-Z0-9_-]+$ (got: $SYNC_SCRIPT)"
           exit 1
         fi
-        npm run "$SYNC_SCRIPT"
+        yarn run "$SYNC_SCRIPT"
       working-directory: ${{ inputs.frontend-path }}
 
     - name: Zip mining pool assets

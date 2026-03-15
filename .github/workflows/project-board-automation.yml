@@ -1,6 +1,7 @@
 # Reusable workflow: Automate project board management
 # - Add newly created issues to project board
 # - Set status to "Review Needed" when a reviewer is requested on a non-draft PR
+# - Fetch milestone issues and add them to project board when a milestone is created or edited
 name: Project Board Automation
 
 on:
@@ -18,6 +19,11 @@ on:
         default: 'ubuntu-latest'
       handle-issues:
         description: 'Whether to handle adding issues to project board'
+        required: false
+        type: boolean
+        default: true
+      handle-milestones:
+        description: 'Whether to fetch milestone issues and add them to project board'
         required: false
         type: boolean
         default: true
@@ -46,6 +52,7 @@ jobs:
           script: |
             const projectNumber = ${{ inputs.project-number }};
             const handleIssues = ${{ inputs.handle-issues }};
+            const handleMilestones = ${{ inputs.handle-milestones }};
 
             // Skip draft PRs
             if (
@@ -97,6 +104,77 @@ jobs:
                   throw error;
                 }
               }
+              return;
+            }
+
+            // Handle milestone events - fetch all issues for the milestone and add them to project
+            if (context.eventName === 'milestone' && handleMilestones) {
+              const milestoneNumber = context.payload.milestone.number;
+              console.log(`Fetching issues for milestone #${milestoneNumber}...`);
+
+              const addMutation = `
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item { id }
+                  }
+                }
+              `;
+
+              // Paginate through all issues in the milestone
+              let page = 1;
+              const perPage = 100;
+              let totalAdded = 0;
+
+              while (true) {
+                const { data: issues } = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  milestone: milestoneNumber,
+                  state: 'open',
+                  per_page: perPage,
+                  page
+                });
+
+                if (issues.length === 0) break;
+
+                for (const issue of issues) {
+                  // Skip pull requests (they appear in issues list but have a pull_request key)
+                  if (issue.pull_request) continue;
+
+                  try {
+                    await github.graphql(addMutation, {
+                      projectId: "${{ secrets.PROJECT_ID }}",
+                      contentId: issue.node_id
+                    });
+                    totalAdded++;
+                    console.log(`Added issue #${issue.number} to project #${projectNumber}`);
+                  } catch (error) {
+                    const errors = error?.errors ?? [];
+                    const isAlreadyInProject = errors.some(e => {
+                      if (typeof e.message !== 'string') return false;
+                      const path = e.path ?? [];
+                      const fromOurMutation = Array.isArray(path) && path.includes('addProjectV2ItemById');
+                      if (!fromOurMutation) return false;
+                      const isUnprocessable = e.extensions?.code === 'UNPROCESSABLE';
+                      if (!isUnprocessable) return false;
+                      const msg = e.message.toLowerCase();
+                      return /already\s+(exists\s+)?in\s+(this\s+)?project\b/.test(msg);
+                    });
+
+                    if (isAlreadyInProject) {
+                      console.log(`Issue #${issue.number} is already in project #${projectNumber}, skipping.`);
+                    } else {
+                      console.error(`Failed to add issue #${issue.number} to project #${projectNumber}:`, error);
+                      throw error;
+                    }
+                  }
+                }
+
+                if (issues.length < perPage) break;
+                page++;
+              }
+
+              console.log(`Milestone #${milestoneNumber}: added ${totalAdded} issue(s) to project #${projectNumber}`);
               return;
             }
 

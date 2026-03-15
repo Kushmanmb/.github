@@ -52,10 +52,15 @@ on:
         required: false
         type: string
         default: 'node'
+      runs-on:
+        description: 'Runner label(s) to use for the build job'
+        required: false
+        type: string
+        default: 'self-hosted'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Setup Node.js CI
         uses: Kushmanmb/.github/actions/node-ci@master

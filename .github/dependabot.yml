@@ -1,0 +1,82 @@
+version: 2
+
+updates:
+  # Workflow files in .github/workflows/
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: node-ci
+  - package-ecosystem: "github-actions"
+    directory: "/actions/node-ci"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: lint-test-build
+  - package-ecosystem: "github-actions"
+    directory: "/actions/lint-test-build"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: setup-rust
+  - package-ecosystem: "github-actions"
+    directory: "/actions/setup-rust"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: compute-asset-hash
+  - package-ecosystem: "github-actions"
+    directory: "/actions/compute-asset-hash"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: sync-assets
+  - package-ecosystem: "github-actions"
+    directory: "/actions/sync-assets"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: restore-assets
+  - package-ecosystem: "github-actions"
+    directory: "/actions/restore-assets"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+
+  # Composite action: fetch-proofs
+  - package-ecosystem: "github-actions"
+    directory: "/actions/fetch-proofs"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"

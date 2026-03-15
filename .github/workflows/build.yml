@@ -1,0 +1,78 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'Working directory for npm commands'
+        required: true
+        type: string
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '24.13.0'
+      flavor:
+        description: 'Build flavor (dev or prod)'
+        required: false
+        type: string
+        default: 'dev'
+      run-lint:
+        description: 'Whether to run lint step'
+        required: false
+        type: boolean
+        default: true
+      lint-script:
+        description: 'npm script name for linting'
+        required: false
+        type: string
+        default: 'lint'
+      run-test:
+        description: 'Whether to run test step'
+        required: false
+        type: boolean
+        default: true
+      test-script:
+        description: 'npm script name for testing'
+        required: false
+        type: string
+        default: 'test'
+      run-build:
+        description: 'Whether to run build step'
+        required: false
+        type: boolean
+        default: true
+      build-script:
+        description: 'npm script name for building'
+        required: false
+        type: string
+        default: 'build'
+      cache-prefix:
+        description: 'Prefix for cache key'
+        required: false
+        type: string
+        default: 'node'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js CI
+        uses: Kushmanmb/.github/actions/node-ci@master
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          node-version: ${{ inputs.node-version }}
+          flavor: ${{ inputs.flavor }}
+          cache-prefix: ${{ inputs.cache-prefix }}
+
+      - name: Lint, Test, and Build
+        uses: Kushmanmb/.github/actions/lint-test-build@master
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          flavor: ${{ inputs.flavor }}
+          run-lint: ${{ inputs.run-lint }}
+          lint-script: ${{ inputs.lint-script }}
+          run-test: ${{ inputs.run-test }}
+          test-script: ${{ inputs.test-script }}
+          run-build: ${{ inputs.run-build }}
+          build-script: ${{ inputs.build-script }}

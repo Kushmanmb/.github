@@ -76,7 +76,12 @@ runs:
             --max-time "$TIMEOUT" \
             --max-redirs 5 \
             --location \
-            "$URL" 2>/dev/null) || HTTP_CODE="000"
+            "$URL" 2>/dev/null) || HTTP_CODE="ERR"
+
+          # curl returns "000" when it cannot connect at all; treat as error
+          if [[ "$HTTP_CODE" == "000" ]]; then
+            HTTP_CODE="ERR"
+          fi
 
           if [[ "$HTTP_CODE" =~ ^2 ]]; then
             STATUS="ok"

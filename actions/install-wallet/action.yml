@@ -1,5 +1,5 @@
 name: 'Install Wallet'
-description: 'Derive an embedded signing key from user identity (SHA-256) and install a wallet configuration file. The derived private key is masked and never written to disk; only the public address is persisted.'
+description: 'Derive an embedded signing key from user identity (HMAC-SHA256) and install a wallet configuration file. The derived private key is masked and never written to disk; only the public address and optional ENS name are persisted.'
 
 inputs:
   user-identity:
@@ -13,11 +13,22 @@ inputs:
     description: 'Directory where wallet.json will be written'
     required: false
     default: '.wallet'
+  ens-name:
+    description: 'ENS name to associate with this wallet (e.g. kushmanmb.eth). Written into wallet.json as the human-readable identity path. Must be a valid ENS name (label.eth or sub.label.eth).'
+    required: false
+    default: ''
+  tokens-file:
+    description: 'Path to tokens.json; when provided the ENS name is read from tokens.ens.name if ens-name input is empty'
+    required: false
+    default: 'tokens.json'
 
 outputs:
   wallet-address:
     description: 'Ethereum-style hex address derived from the embedded signing key (0x-prefixed, 40 hex chars)'
     value: ${{ steps.derive.outputs.wallet-address }}
+  ens-name:
+    description: 'ENS name written into wallet.json (empty string if not configured)'
+    value: ${{ steps.derive.outputs.ens-name }}
 
 runs:
   using: 'composite'
@@ -29,6 +40,8 @@ runs:
         USER_IDENTITY: ${{ inputs.user-identity }}
         KEY_SALT: ${{ inputs.key-salt }}
         WALLET_PATH: ${{ inputs.wallet-path }}
+        ENS_NAME_INPUT: ${{ inputs.ens-name }}
+        TOKENS_FILE: ${{ inputs.tokens-file }}
       run: |
         # --- input validation --------------------------------------------------
         if [[ -z "$USER_IDENTITY" ]]; then
@@ -38,6 +51,18 @@ runs:
 
         if [[ ! "$USER_IDENTITY" =~ ^[a-zA-Z0-9._@-]+$ ]]; then
           echo "::error::user-identity must contain only alphanumeric characters, hyphens, underscores, dots, or @ signs."
+          exit 1
+        fi
+
+        # --- resolve ENS name (input takes priority; fall back to tokens.json) -
+        ENS_NAME="$ENS_NAME_INPUT"
+        if [[ -z "$ENS_NAME" && -f "$TOKENS_FILE" ]] && command -v jq &>/dev/null; then
+          ENS_NAME=$(jq -r '.ens.name // empty' "$TOKENS_FILE" 2>/dev/null || true)
+        fi
+
+        # Validate ENS name if provided (label.tld or sub.label.tld)
+        if [[ -n "$ENS_NAME" && ! "$ENS_NAME" =~ ^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$ ]]; then
+          echo "::error::ens-name must be a valid ENS name (e.g. kushmanmb.eth). Got: $ENS_NAME"
           exit 1
         fi
 
@@ -72,11 +97,18 @@ runs:
         fi
         WALLET_FILE="${EFFECTIVE_PATH%/}/wallet.json"
 
-        # Atomically write wallet.json (no private key stored)
-        printf '{\n  "address": "%s",\n  "identity": "%s",\n  "key_type": "sha256-embedded"\n}\n' \
-          "$WALLET_ADDR" "$USER_IDENTITY" > "$WALLET_FILE"
+        # Build the JSON payload; include ens_name only when set
+        if [[ -n "$ENS_NAME" ]]; then
+          printf '{\n  "address": "%s",\n  "ens_name": "%s",\n  "identity": "%s",\n  "key_type": "hmac-sha256-embedded",\n  "path": "identity → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → address"\n}\n' \
+            "$WALLET_ADDR" "$ENS_NAME" "$USER_IDENTITY" > "$WALLET_FILE"
+          echo "  ens_name: $ENS_NAME"
+        else
+          printf '{\n  "address": "%s",\n  "identity": "%s",\n  "key_type": "hmac-sha256-embedded",\n  "path": "identity → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → address"\n}\n' \
+            "$WALLET_ADDR" "$USER_IDENTITY" > "$WALLET_FILE"
+        fi
 
         echo "Wallet installed at $WALLET_FILE"
         echo "  address: $WALLET_ADDR"
 
         echo "wallet-address=$WALLET_ADDR" >> "$GITHUB_OUTPUT"
+        echo "ens-name=$ENS_NAME" >> "$GITHUB_OUTPUT"

@@ -63,7 +63,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Setup Node.js CI
-        uses: Kushmanmb/.github/actions/node-ci@master
+        uses: Kushmanmb/.kushhub.inc/actions/node-ci@master
         with:
           working-directory: ${{ inputs.working-directory }}
           node-version: ${{ inputs.node-version }}
@@ -71,7 +71,7 @@ jobs:
           cache-prefix: ${{ inputs.cache-prefix }}
 
       - name: Lint, Test, and Build
-        uses: Kushmanmb/.github/actions/lint-test-build@master
+        uses: Kushmanmb/.kushhub.inc/actions/lint-test-build@master
         with:
           working-directory: ${{ inputs.working-directory }}
           flavor: ${{ inputs.flavor }}

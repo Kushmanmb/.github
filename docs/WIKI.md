@@ -29,7 +29,7 @@ Full reference documentation for every composite action and reusable workflow pu
 All actions and workflows in this repository are designed to be consumed by other repositories in the Kushmanmb GitHub organization.  Reference them by tag for reproducible builds:
 
 ```yaml
-- uses: Kushmanmb/.github/actions/node-ci@v1
+- uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
 ```
 
 ---
@@ -48,7 +48,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 |-------|----------|---------|-------------|
 | `node-version` | No | `24.13.0` | Node.js version to use |
 | `checkout-path` | No | `.` | Path to check out the repository into |
-| `working-directory` | **Yes** | — | Working directory for `npm install` (relative to `checkout-path`) |
+| `working-directory` | **Yes** | — | Working directory for `yarn install` (relative to `checkout-path`) |
 | `flavor` | No | `dev` | Build flavor: `dev` (includes devDependencies) or `prod` (production-only) |
 | `cache-prefix` | No | `node` | Prefix added to the cache key |
 | `checkout-submodules` | No | `false` | Whether to recursively check out submodules |
@@ -58,7 +58,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 
 ```yaml
 - name: Setup Node.js CI
-  uses: Kushmanmb/.github/actions/node-ci@v1
+  uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
   with:
     working-directory: frontend
     node-version: '20'
@@ -71,7 +71,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 
 **Path:** `actions/lint-test-build/action.yml`
 
-Runs lint, test, and build steps for a Node.js project.  Each step runs an `npm` script whose name is validated against a strict allowlist pattern before execution.
+Runs lint, test, and build steps for a Node.js project.  Each step runs a `yarn` script whose name is validated against a strict allowlist pattern before execution.
 
 #### Inputs
 
@@ -80,11 +80,11 @@ Runs lint, test, and build steps for a Node.js project.  Each step runs an `npm`
 | `working-directory` | **Yes** | — | Working directory for all commands |
 | `flavor` | No | `dev` | Build flavor; lint and test only run when `flavor == dev` |
 | `run-lint` | No | `true` | Set to `false` to skip the lint step |
-| `lint-script` | No | `lint` | `npm` script name for linting |
+| `lint-script` | No | `lint` | `yarn` script name for linting |
 | `run-test` | No | `true` | Set to `false` to skip the test step |
-| `test-script` | No | `test` | `npm` script name for testing |
+| `test-script` | No | `test` | `yarn` script name for testing |
 | `run-build` | No | `true` | Set to `false` to skip the build step |
-| `build-script` | No | `build` | `npm` script name for building |
+| `build-script` | No | `build` | `yarn` script name for building |
 
 > **Security note:** Script names are validated against `^[a-zA-Z0-9_-]+$`.  Only trusted workflow authors should supply custom script names.
 
@@ -92,7 +92,7 @@ Runs lint, test, and build steps for a Node.js project.  Each step runs an `npm`
 
 ```yaml
 - name: Lint, Test, and Build
-  uses: Kushmanmb/.github/actions/lint-test-build@v1
+  uses: Kushmanmb/.kushhub.inc/actions/lint-test-build@v1
   with:
     working-directory: frontend
     flavor: dev
@@ -132,7 +132,7 @@ Reads a `rust-toolchain` file, restores the Cargo dependency cache, and installs
 
 ```yaml
 - name: Setup Rust
-  uses: Kushmanmb/.github/actions/setup-rust@v1
+  uses: Kushmanmb/.kushhub.inc/actions/setup-rust@v1
   with:
     working-directory: ${{ github.workspace }}
     flavor: prod
@@ -164,7 +164,7 @@ Computes a deterministic 12-character hash from the HEAD SHAs of two external re
 ```yaml
 - name: Compute asset cache key
   id: asset-hash
-  uses: Kushmanmb/.github/actions/compute-asset-hash@v1
+  uses: Kushmanmb/.kushhub.inc/actions/compute-asset-hash@v1
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -200,7 +200,7 @@ Proof files are discovered by matching any of:
 
 ```yaml
 - name: Fetch ZK proofs
-  uses: Kushmanmb/.github/actions/fetch-proofs@v1
+  uses: Kushmanmb/.kushhub.inc/actions/fetch-proofs@v1
   with:
     search-path: ./output
     artifact-name: my-proof-artifacts
@@ -235,7 +235,7 @@ Restores cached mining-pool and promo-video asset bundles.  Optionally downloads
 
 ```yaml
 - name: Restore assets
-  uses: Kushmanmb/.github/actions/restore-assets@v1
+  uses: Kushmanmb/.kushhub.inc/actions/restore-assets@v1
   with:
     frontend-path: frontend
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -255,7 +255,7 @@ Syncs assets from a CDN, zips them, uploads them as workflow artifacts, and save
 |-------|----------|---------|-------------|
 | `frontend-path` | **Yes** | — | Path to the frontend directory |
 | `github-token` | **Yes** | — | GitHub token for API access |
-| `sync-script` | No | `sync-assets-dev` | `npm` script name for syncing assets |
+| `sync-script` | No | `sync-assets-dev` | `yarn` script name for syncing assets |
 | `cache-version` | No | `v1` | Cache-key fallback when remote SHA lookup fails |
 
 #### Outputs
@@ -270,7 +270,7 @@ Syncs assets from a CDN, zips them, uploads them as workflow artifacts, and save
 
 ```yaml
 - name: Sync and cache assets
-  uses: Kushmanmb/.github/actions/sync-assets@v1
+  uses: Kushmanmb/.kushhub.inc/actions/sync-assets@v1
   with:
     frontend-path: frontend
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -291,15 +291,15 @@ A `workflow_call` pipeline that runs Node.js lint → test → build steps using
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `working-directory` | **Yes** | — | Working directory for `npm` commands |
+| `working-directory` | **Yes** | — | Working directory for `yarn` commands |
 | `node-version` | No | `24.13.0` | Node.js version |
 | `flavor` | No | `dev` | Build flavor (`dev` or `prod`) |
 | `run-lint` | No | `true` | Whether to run the lint step |
-| `lint-script` | No | `lint` | `npm` script name for linting |
+| `lint-script` | No | `lint` | `yarn` script name for linting |
 | `run-test` | No | `true` | Whether to run the test step |
-| `test-script` | No | `test` | `npm` script name for testing |
+| `test-script` | No | `test` | `yarn` script name for testing |
 | `run-build` | No | `true` | Whether to run the build step |
-| `build-script` | No | `build` | `npm` script name for building |
+| `build-script` | No | `build` | `yarn` script name for building |
 | `cache-prefix` | No | `node` | Prefix for the cache key |
 
 #### Example
@@ -307,7 +307,7 @@ A `workflow_call` pipeline that runs Node.js lint → test → build steps using
 ```yaml
 jobs:
   build:
-    uses: Kushmanmb/.github/.github/workflows/build.yml@v1
+    uses: Kushmanmb/.kushhub.inc/.github/workflows/build.yml@v1
     with:
       working-directory: frontend
       node-version: '20'
@@ -343,7 +343,7 @@ A `workflow_call` workflow that automatically adds issues and PRs to a GitHub pr
 ```yaml
 jobs:
   project-board:
-    uses: Kushmanmb/.github/.github/workflows/project-board-automation.yml@v1
+    uses: Kushmanmb/.kushhub.inc/.github/workflows/project-board-automation.yml@v1
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
       PROJECT_ID: ${{ secrets.PROJECT_ID }}

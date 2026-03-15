@@ -1,25 +1,2 @@
-# CODEOWNERS
-#
-# Each line defines a path pattern and the GitHub users or teams responsible
-# for reviewing changes to files matching that pattern.  The last matching
-# pattern takes precedence.  See:
-# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-
-# Default: all files are owned by @Kushmanmb
-*                                   @Kushmanmb
-
-# Composite actions
-/actions/                           @Kushmanmb
-
-# Reusable workflows
-/.github/workflows/                 @Kushmanmb
-
-# Repository profile
-/profile/                           @Kushmanmb
-
-# Documentation
-/docs/                              @Kushmanmb
-README.md                           @Kushmanmb
-ROADMAP.md                          @Kushmanmb
-MANIFESTO.md                        @Kushmanmb
-CODEOWNERS                          @Kushmanmb
+# CODEOWNERS — all paths require review from @Kushmanmb
+* @Kushmanmb

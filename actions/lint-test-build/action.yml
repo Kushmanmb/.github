@@ -1,5 +1,5 @@
 name: 'Lint, Test, and Build'
-description: 'Run lint, test, and build steps for Node.js projects. Script inputs must be npm script names only and should only be set by trusted workflow authors.'
+description: 'Run lint, test, and build steps for Node.js projects. Script inputs must be yarn script names only and should only be set by trusted workflow authors.'
 
 inputs:
   working-directory:
@@ -14,7 +14,7 @@ inputs:
     required: false
     default: 'true'
   lint-script:
-    description: 'npm script name for linting (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    description: 'yarn script name for linting (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
     required: false
     default: 'lint'
   run-test:
@@ -22,7 +22,7 @@ inputs:
     required: false
     default: 'true'
   test-script:
-    description: 'npm script name for testing (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    description: 'yarn script name for testing (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
     required: false
     default: 'test'
   run-build:
@@ -30,7 +30,7 @@ inputs:
     required: false
     default: 'true'
   build-script:
-    description: 'npm script name for building (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
+    description: 'yarn script name for building (e.g. from package.json). Must be a single script name; set only from trusted workflow authors.'
     required: false
     default: 'build'
 
@@ -47,7 +47,7 @@ runs:
           echo "::error::lint-script must match ^[a-zA-Z0-9_-]+$ (got: $LINT_SCRIPT)"
           exit 1
         fi
-        npm run "$LINT_SCRIPT"
+        yarn run "$LINT_SCRIPT"
       working-directory: ${{ inputs.working-directory }}
 
     - name: Test
@@ -60,7 +60,7 @@ runs:
           echo "::error::test-script must match ^[a-zA-Z0-9_-]+$ (got: $TEST_SCRIPT)"
           exit 1
         fi
-        npm run "$TEST_SCRIPT"
+        yarn run "$TEST_SCRIPT"
       working-directory: ${{ inputs.working-directory }}
 
     - name: Build
@@ -73,5 +73,5 @@ runs:
           echo "::error::build-script must match ^[a-zA-Z0-9_-]+$ (got: $BUILD_SCRIPT)"
           exit 1
         fi
-        npm run "$BUILD_SCRIPT"
+        yarn run "$BUILD_SCRIPT"
       working-directory: ${{ inputs.working-directory }}

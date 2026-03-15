@@ -6,5 +6,5 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 
 Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
-- 📋 [Roadmap](https://github.com/Kushmanmb/.github/blob/master/ROADMAP.md) — where things are headed
-- 📜 [Manifesto](https://github.com/Kushmanmb/.github/blob/master/MANIFESTO.md) — the principles behind everything built here
+- 📋 [Roadmap](https://github.com/Kushmanmb/.kushhub.inc/blob/master/ROADMAP.md) — where things are headed
+- 📜 [Manifesto](https://github.com/Kushmanmb/.kushhub.inc/blob/master/MANIFESTO.md) — the principles behind everything built here

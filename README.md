@@ -37,12 +37,12 @@ Reference any action or workflow at a specific release tag for stability:
 
 ```yaml
 # Composite action
-- uses: Kushmanmb/.github/actions/node-ci@v1
+- uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
 
 # Reusable workflow
 jobs:
   build:
-    uses: Kushmanmb/.github/.github/workflows/build.yml@v1
+    uses: Kushmanmb/.kushhub.inc/.github/workflows/build.yml@v1
     with:
       working-directory: .
 ```

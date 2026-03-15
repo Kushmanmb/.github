@@ -1,0 +1,56 @@
+name: 'Fetch Proof Artifacts'
+description: 'Upload ZK proof JSON files as artifacts so they are available across jobs and workflow runs'
+
+inputs:
+  search-path:
+    description: 'Root path to search for proof JSON files'
+    required: false
+    default: '.'
+  artifact-name:
+    description: 'Name for the uploaded artifact'
+    required: false
+    default: 'proof-artifacts'
+  retention-days:
+    description: 'Number of days to retain the artifact'
+    required: false
+    default: '7'
+
+outputs:
+  artifact-name:
+    description: 'Name of the uploaded artifact'
+    value: ${{ steps.upload.outputs.artifact-name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Collect proof JSON files
+      id: collect
+      shell: bash
+      run: |
+        SEARCH_PATH="${{ inputs.search-path }}"
+        mapfile -t PROOF_LIST < <(find "$SEARCH_PATH" \
+          \( -name "proof-with-pis.json" \
+          -o -name "proof-with-io.json" \
+          -o -name "*-proof.json" \) \
+          2>/dev/null | sort)
+        if [[ ${#PROOF_LIST[@]} -eq 0 ]]; then
+          echo "No proof JSON files found under $SEARCH_PATH"
+          echo "found=false" >> $GITHUB_OUTPUT
+        else
+          echo "Found ${#PROOF_LIST[@]} proof file(s):"
+          printf '  %s\n' "${PROOF_LIST[@]}"
+          echo "found=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload proof artifacts
+      id: upload
+      if: steps.collect.outputs.found == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ inputs.search-path }}/**/proof-with-pis.json
+          ${{ inputs.search-path }}/**/proof-with-io.json
+          ${{ inputs.search-path }}/**/*-proof.json
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: warn

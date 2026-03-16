@@ -22,8 +22,10 @@ Full reference documentation for every composite action and reusable workflow pu
    - [build](#build)
    - [project-board-automation](#project-board-automation)
    - [auto-close-external-prs](#auto-close-external-prs)
-4. [Versioning and Releases](#versioning-and-releases)
-5. [Contributing](#contributing)
+4. [Rust Libraries](#rust-libraries)
+   - [zkpdf_lib](#zkpdf_lib)
+5. [Versioning and Releases](#versioning-and-releases)
+6. [Contributing](#contributing)
 
 ---
 
@@ -642,6 +644,59 @@ const hash = createHash('sha512')
 ### Security
 
 Includes a fix for CVE-2025-9288 / GHSA-95m3-7q98-8xr5: strict input type validation in `update()` prevents hash-state rewind and crafted-object attacks.
+
+---
+
+## Rust Libraries
+
+### zkpdf_lib
+
+**Path:** `zkpdf_lib/`
+
+A pure-Rust library for ZK-verifiable PDF substring claims.  Given a PDF document and a claimed position, `verify_pdf_claim` asserts that a specific substring appears at the stated byte offset.  The result is intended to be used as a public input to a ZK circuit.
+
+#### Structs
+
+##### `PDFCircuitInput`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pdf_bytes` | `Vec<u8>` | Raw bytes of the PDF document |
+| `page_number` | `u32` | Zero-based page index the claim is associated with |
+| `offset` | `usize` | Byte offset within `pdf_bytes` where `substring` must start |
+| `substring` | `String` | Exact UTF-8 string that must be present at `offset` |
+
+#### Functions
+
+##### `verify_pdf_claim(input: PDFCircuitInput) -> Result<bool, ZkPdfError>`
+
+Verifies that `input.pdf_bytes` contains `input.substring` starting at byte offset `input.offset`.
+
+Returns `Ok(true)` when the claim holds.
+
+**Errors**
+
+| Variant | Condition |
+|---------|-----------|
+| `ZkPdfError::InvalidPdf` | The bytes do not start with the `%PDF` magic header |
+| `ZkPdfError::ClaimFailed` | The substring is absent at the stated offset, or the range would exceed the document length |
+
+#### Usage
+
+```rust
+use zkpdf_lib::{verify_pdf_claim, PDFCircuitInput};
+
+// Create input for PDF verification
+let input = PDFCircuitInput {
+    pdf_bytes: pdf_data,
+    page_number: 0,
+    offset: 100,
+    substring: "Important Document".to_string(),
+};
+
+// Verify PDF
+let result = verify_pdf_claim(input)?;
+```
 
 ---
 

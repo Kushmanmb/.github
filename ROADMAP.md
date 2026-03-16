@@ -29,6 +29,7 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 
 - [ ] Release a standalone CLI wrapper around the composite actions for local development
 - [ ] Build a GitHub App that surfaces roadmap status on PRs automatically
+- [x] Implement `zkpdf_lib` — Rust library providing `PDFCircuitInput` and `verify_pdf_claim` for ZK-verifiable PDF substring claims
 - [ ] Explore WASM-based proof verification as a CI gate in `fetch-proofs`
 - [ ] Open-source the complete automation toolkit under a permissive license
 - [ ] Establish a contributor guide and public issue tracker for community feedback

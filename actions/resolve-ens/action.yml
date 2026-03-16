@@ -1,5 +1,5 @@
 name: 'Resolve ENS / Build Token Path'
-description: 'Read tokens.json, validate the identity → address → ENS path, and emit the full consolidated token chain. Confirms the embedded wallet address is consistently bound to the kushmanmb.eth ENS name.'
+description: 'Read tokens.json, validate the identity → address → ENS path, and emit the full consolidated token chain. Confirms the embedded wallet address is consistently bound to the kushmanmb.eth ENS name. Also resolves kushmanmb.base.eth on Base (chain 8453) and emits a side-by-side comparison of both contract origins.'
 
 inputs:
   tokens-file:
@@ -38,6 +38,18 @@ outputs:
   verification-log:
     description: 'Human-readable docs-verification report covering every resolved input, output, and the full token chain'
     value: ${{ steps.resolve.outputs.verification-log }}
+  base-ens-name:
+    description: 'Base ENS name read from tokens.json (e.g. kushmanmb.base.eth)'
+    value: ${{ steps.resolve.outputs.base-ens-name }}
+  base-ens-app-url:
+    description: 'Base ENS app URL for the resolved Basename'
+    value: ${{ steps.resolve.outputs.base-ens-app-url }}
+  basescan-url:
+    description: 'Basescan URL for the wallet address on Base mainnet'
+    value: ${{ steps.resolve.outputs.basescan-url }}
+  comparison-report:
+    description: 'Human-readable side-by-side comparison of kushmanmb.eth (mainnet) and kushmanmb.base.eth (Base) contract origins'
+    value: ${{ steps.resolve.outputs.comparison-report }}
 
 runs:
   using: 'composite'
@@ -133,6 +145,32 @@ runs:
         echo "Summary:"
         echo "$TOKENS_SUMMARY" | jq .
 
+        # --- read Base ENS configuration -------------------------------------
+        BASE_ENS_NAME=$(jq -r '.base_ens.name // empty' "$TOKENS_FILE")
+        BASE_ENS_NETWORK=$(jq -r '.base_ens.network // "base"' "$TOKENS_FILE")
+        BASE_ENS_CHAIN_ID=$(jq -r '.base_ens.chain_id // 8453' "$TOKENS_FILE")
+        BASE_ENS_REGISTRY=$(jq -r '.base_ens.registry // "n/a"' "$TOKENS_FILE")
+        BASE_ENS_RESOLVER=$(jq -r '.base_ens.resolver // "n/a"' "$TOKENS_FILE")
+        BASE_ENS_APP_URL=$(jq -r '.explorers.base_ens_app // empty' "$TOKENS_FILE")
+        BASESCAN_BASE=$(jq -r '.explorers.base // "https://basescan.org"' "$TOKENS_FILE")
+
+        if [[ -z "$BASE_ENS_APP_URL" && -n "$BASE_ENS_NAME" ]]; then
+          # Strip the '.base.eth' suffix to get the registered label (e.g. 'kushmanmb')
+          BASE_ENS_LABEL="${BASE_ENS_NAME%.base.eth}"
+          BASE_ENS_APP_URL="https://www.base.org/name/${BASE_ENS_LABEL}"
+        fi
+
+        BASESCAN_URL=""
+        if [[ -n "$WALLET_ADDRESS" && -n "$BASE_ENS_NAME" ]]; then
+          BASESCAN_URL="${BASESCAN_BASE}/address/${WALLET_ADDRESS}"
+          echo "Basescan   : $BASESCAN_URL"
+        fi
+
+        if [[ -n "$BASE_ENS_NAME" ]]; then
+          echo "Base ENS   : $BASE_ENS_NAME"
+          echo "Network    : $BASE_ENS_NETWORK (chain $BASE_ENS_CHAIN_ID)"
+        fi
+
         # --- build human-readable docs-verification log ----------------------
         TOKENS_LIST=$(jq -r 'if (.tokens | length) == 0 then "  <no tokens registered>" else .tokens[] | "  • \(.symbol) (\(.name)) — chain \(.chain_id) [\(.network)] [\(.type)]" end' "$TOKENS_FILE")
         ENS_REGISTRY=$(jq -r '.ens.registry // "n/a"' "$TOKENS_FILE")
@@ -152,7 +190,7 @@ runs:
   user-identity  : ${USER_IDENTITY:-<not provided>}
   wallet-address : ${WALLET_ADDRESS:-<not provided>}
 
-  ENS Binding
+  ENS Binding (Mainnet)
   ──────────────────────────────────────────────────
   ens.name       : ${ENS_NAME:-<not resolved>}
   ens.network    : ${ENS_NETWORK:-n/a} (chain ${ENS_CHAIN_ID:-n/a})
@@ -160,6 +198,15 @@ runs:
   ens.resolver   : ${ENS_RESOLVER}
   ens-app-url    : ${ENS_APP_URL:-<not resolved>}
   etherscan-url  : ${ETHERSCAN_URL:-<not resolved>}
+
+  Base ENS Binding (Base)
+  ──────────────────────────────────────────────────
+  base_ens.name      : ${BASE_ENS_NAME:-<not resolved>}
+  base_ens.network   : ${BASE_ENS_NETWORK:-n/a} (chain ${BASE_ENS_CHAIN_ID:-n/a})
+  base_ens.registry  : ${BASE_ENS_REGISTRY}
+  base_ens.resolver  : ${BASE_ENS_RESOLVER}
+  base-ens-app-url   : ${BASE_ENS_APP_URL:-<not resolved>}
+  basescan-url       : ${BASESCAN_URL:-<not resolved>}
 
   Wallet / Key Derivation
   ──────────────────────────────────────────────────
@@ -177,14 +224,38 @@ ${TOKENS_LIST}
   token-path     : ${TOKEN_PATH}
 ================================================================"
 
+        # --- build side-by-side comparison report ----------------------------
+        COMPARISON_REPORT=$(printf '%s\n' \
+          "================================================================" \
+          "  ENS Contract Origin Comparison                      ${TIMESTAMP}" \
+          "================================================================" \
+          "$(printf '  %-13s | %-42s | %s' 'Field' 'kushmanmb.eth (Mainnet)' 'kushmanmb.base.eth (Base)')" \
+          "  ─────────────┼──────────────────────────────────────────┼──────────────────────────────────────────" \
+          "$(printf '  %-13s | %-42s | %s' 'Name'     "${ENS_NAME:-n/a}"                                     "${BASE_ENS_NAME:-n/a}")" \
+          "$(printf '  %-13s | %-42s | %s' 'Network'  "${ENS_NETWORK:-n/a} (chain ${ENS_CHAIN_ID:-n/a})"     "${BASE_ENS_NETWORK:-n/a} (chain ${BASE_ENS_CHAIN_ID:-n/a})")" \
+          "$(printf '  %-13s | %-42s | %s' 'Registry' "${ENS_REGISTRY}"                                      "${BASE_ENS_REGISTRY}")" \
+          "$(printf '  %-13s | %-42s | %s' 'Resolver' "${ENS_RESOLVER}"                                      "${BASE_ENS_RESOLVER}")" \
+          "$(printf '  %-13s | %-42s | %s' 'App URL'  "${ENS_APP_URL:-n/a}"                                  "${BASE_ENS_APP_URL:-n/a}")" \
+          "================================================================"
+        )
+
         echo ""
         echo "$VERIFICATION_LOG"
 
-        # --- write verification log to step summary --------------------------
+        echo ""
+        echo "Contract Origin Comparison:"
+        echo "$COMPARISON_REPORT"
+
+        # --- write verification log and comparison to step summary -----------
         {
           echo "## Resolve-ENS Verification Log"
           echo '```'
           echo "$VERIFICATION_LOG"
+          echo '```'
+          echo ""
+          echo "## ENS Contract Origin Comparison"
+          echo '```'
+          echo "$COMPARISON_REPORT"
           echo '```'
         } >> "$GITHUB_STEP_SUMMARY"
 
@@ -194,9 +265,18 @@ ${TOKENS_LIST}
         echo "etherscan-url=$ETHERSCAN_URL" >> "$GITHUB_OUTPUT"
         echo "token-path=$TOKEN_PATH" >> "$GITHUB_OUTPUT"
         printf 'tokens-summary=%s\n' "$(echo "$TOKENS_SUMMARY" | jq -c .)" >> "$GITHUB_OUTPUT"
+        echo "base-ens-name=$BASE_ENS_NAME" >> "$GITHUB_OUTPUT"
+        echo "base-ens-app-url=$BASE_ENS_APP_URL" >> "$GITHUB_OUTPUT"
+        echo "basescan-url=$BASESCAN_URL" >> "$GITHUB_OUTPUT"
         # verification-log uses the multiline heredoc syntax for GITHUB_OUTPUT
         {
           echo "verification-log<<__VLOG_EOF__"
           echo "$VERIFICATION_LOG"
           echo "__VLOG_EOF__"
+        } >> "$GITHUB_OUTPUT"
+        # comparison-report uses the multiline heredoc syntax for GITHUB_OUTPUT
+        {
+          echo "comparison-report<<__CMP_EOF__"
+          echo "$COMPARISON_REPORT"
+          echo "__CMP_EOF__"
         } >> "$GITHUB_OUTPUT"

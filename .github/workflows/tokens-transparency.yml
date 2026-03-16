@@ -53,7 +53,7 @@ jobs:
           echo ""
 
           # ── ENS ───────────────────────────────────────────────────
-          echo "─── ENS Configuration ───────────────────────────────"
+          echo "─── ENS Configuration (Mainnet) ─────────────────────"
           ENS_NAME=$(jq -r '.ens.name     // "N/A"' "$FILE")
           ENS_NET=$(jq -r  '.ens.network  // "N/A"' "$FILE")
           ENS_CID=$(jq -r  '.ens.chain_id // "N/A"' "$FILE")
@@ -64,6 +64,29 @@ jobs:
           echo "  Chain ID:  $ENS_CID"
           echo "  Registry:  $ENS_REG"
           echo "  Resolver:  $ENS_RES"
+          echo ""
+
+          # ── Base ENS ──────────────────────────────────────────────
+          echo "─── Base ENS Configuration (Base) ───────────────────"
+          BASE_ENS_NAME=$(jq -r '.base_ens.name     // "N/A"' "$FILE")
+          BASE_ENS_NET=$(jq -r  '.base_ens.network  // "N/A"' "$FILE")
+          BASE_ENS_CID=$(jq -r  '.base_ens.chain_id // "N/A"' "$FILE")
+          BASE_ENS_REG=$(jq -r  '.base_ens.registry // "N/A"' "$FILE")
+          BASE_ENS_RES=$(jq -r  '.base_ens.resolver // "N/A"' "$FILE")
+          echo "  Name:      $BASE_ENS_NAME"
+          echo "  Network:   $BASE_ENS_NET"
+          echo "  Chain ID:  $BASE_ENS_CID"
+          echo "  Registry:  $BASE_ENS_REG"
+          echo "  Resolver:  $BASE_ENS_RES"
+          echo ""
+
+          # ── Contract Origin Comparison ────────────────────────────
+          echo "─── Contract Origin Comparison ──────────────────────"
+          echo "  Field          kushmanmb.eth              kushmanmb.base.eth"
+          echo "  ─────────────────────────────────────────────────────────────"
+          printf "  %-14s %-26s %s\n" "Network:"  "$ENS_NET (chain $ENS_CID)"      "$BASE_ENS_NET (chain $BASE_ENS_CID)"
+          printf "  %-14s %-26s %s\n" "Registry:" "$ENS_REG" "$BASE_ENS_REG"
+          printf "  %-14s %-26s %s\n" "Resolver:" "$ENS_RES" "$BASE_ENS_RES"
           echo ""
 
           # ── Wallet ────────────────────────────────────────────────
@@ -136,6 +159,13 @@ jobs:
           ENS_REG=$(jq -r  '.ens.registry // "N/A"' "$FILE")
           ENS_RES=$(jq -r  '.ens.resolver // "N/A"' "$FILE")
 
+          BASE_ENS_NAME=$(jq -r '.base_ens.name     // "N/A"' "$FILE")
+          BASE_ENS_NET=$(jq -r  '.base_ens.network  // "N/A"' "$FILE")
+          BASE_ENS_CID=$(jq -r  '.base_ens.chain_id // "N/A"' "$FILE")
+          BASE_ENS_REG=$(jq -r  '.base_ens.registry // "N/A"' "$FILE")
+          BASE_ENS_RES=$(jq -r  '.base_ens.resolver // "N/A"' "$FILE")
+          BASE_ENS_APP=$(jq -r  '.explorers.base_ens_app // "https://www.base.org/name/kushmanmb"' "$FILE")
+
           W_TYPE=$(jq -r  '.wallet.key_type           // "N/A"' "$FILE")
           W_DOM=$(jq -r   '.wallet.domain_key         // "N/A"' "$FILE")
           W_DERIV=$(jq -r '.wallet.address_derivation // "N/A"' "$FILE")
@@ -154,7 +184,7 @@ jobs:
             echo "> **Source:** [tokens.json](${SOURCE_URL})"
             echo ""
 
-            echo "## ENS Configuration"
+            echo "## ENS Configuration (Mainnet)"
             echo "| Field | Value |"
             echo "|-------|-------|"
             echo "| Name | \`${ENS_NAME}\` |"
@@ -162,6 +192,25 @@ jobs:
             echo "| Chain ID | ${ENS_CID} |"
             echo "| Registry | \`${ENS_REG}\` |"
             echo "| Resolver | \`${ENS_RES}\` |"
+            echo ""
+
+            echo "## Base ENS Configuration (Base)"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Name | \`${BASE_ENS_NAME}\` |"
+            echo "| Network | ${BASE_ENS_NET} |"
+            echo "| Chain ID | ${BASE_ENS_CID} |"
+            echo "| Registry | \`${BASE_ENS_REG}\` |"
+            echo "| Resolver | \`${BASE_ENS_RES}\` |"
+            echo "| App URL | [${BASE_ENS_APP}](${BASE_ENS_APP}) |"
+            echo ""
+
+            echo "## Contract Origin Comparison"
+            echo "| Field | kushmanmb.eth (Mainnet) | kushmanmb.base.eth (Base) |"
+            echo "|-------|------------------------|--------------------------|"
+            echo "| Network | ${ENS_NET} (chain ${ENS_CID}) | ${BASE_ENS_NET} (chain ${BASE_ENS_CID}) |"
+            echo "| Registry | \`${ENS_REG}\` | \`${BASE_ENS_REG}\` |"
+            echo "| Resolver | \`${ENS_RES}\` | \`${BASE_ENS_RES}\` |"
             echo ""
 
             echo "## Wallet / Key Derivation"

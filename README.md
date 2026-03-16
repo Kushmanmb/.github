@@ -6,6 +6,8 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 [![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
 [![Ownership Announcement](https://img.shields.io/badge/ownership-announcement-ff6b00?logo=github&logoColor=white)](ANNOUNCEMENT.md)
 [![Tokens Transparency Log](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml)
+[![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
+[![Basename: kushmanmb.base.eth](https://img.shields.io/badge/Basename-kushmanmb.base.eth-0052ff?logo=coinbase&logoColor=white)](https://www.base.org/name/kushmanmb)
 
 > **📣 Global Ownership Announcement** — All repositories, actions, workflows, and packages
 > under this account are the sole property of **@Kushmanmb**. External contributions are not

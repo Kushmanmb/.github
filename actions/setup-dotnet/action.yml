@@ -1,0 +1,69 @@
+name: 'Setup .NET'
+description: 'Checkout repository, setup .NET SDK, and restore NuGet dependencies'
+
+inputs:
+  dotnet-version:
+    description: '.NET SDK version to use'
+    required: false
+    default: '9.0.x'
+  working-directory:
+    description: 'Working directory for dotnet restore'
+    required: false
+    default: '.'
+  checkout-path:
+    description: 'Path to checkout the repository'
+    required: false
+    default: '.'
+  checkout-ref:
+    description: 'Git ref to checkout (branch, tag, or SHA)'
+    required: false
+    default: ''
+  checkout-submodules:
+    description: 'Whether to checkout submodules'
+    required: false
+    default: 'false'
+  flavor:
+    description: 'Build flavor for cache key differentiation'
+    required: false
+    default: 'dev'
+  run-restore:
+    description: 'Whether to run dotnet restore'
+    required: false
+    default: 'true'
+
+outputs:
+  dotnet-version:
+    description: 'The .NET SDK version that was installed'
+    value: ${{ steps.setup-dotnet.outputs.dotnet-version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.checkout-path }}
+        ref: ${{ inputs.checkout-ref }}
+        submodules: ${{ inputs.checkout-submodules }}
+
+    - name: Setup .NET SDK
+      id: setup-dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ inputs.flavor }}-${{ inputs.dotnet-version }}-${{ hashFiles(format('{0}/**/*.csproj', inputs.working-directory), format('{0}/**/*.fsproj', inputs.working-directory), format('{0}/**/packages.lock.json', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-${{ inputs.flavor }}-${{ inputs.dotnet-version }}-
+          ${{ runner.os }}-nuget-${{ inputs.flavor }}-
+          ${{ runner.os }}-nuget-
+
+    - name: Restore NuGet dependencies
+      if: inputs.run-restore == 'true'
+      shell: bash
+      run: dotnet restore
+      working-directory: ${{ inputs.working-directory }}

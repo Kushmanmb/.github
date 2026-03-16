@@ -1,0 +1,10 @@
+[package]
+name = "zkpdf_lib"
+version = "0.1.0"
+edition = "2021"
+description = "ZK-verifiable PDF claim library: verifies that a PDF contains a given substring at a specified byte offset"
+license = "ISC"
+
+[lib]
+name = "zkpdf_lib"
+path = "src/lib.rs"

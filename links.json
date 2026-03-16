@@ -6,6 +6,11 @@
       "badge": "https://img.shields.io/badge/GitHub-Kushmanmb-0075ff?logo=github&logoColor=white"
     },
     {
+      "name": "Announcement",
+      "url": "https://github.com/Kushmanmb/.github/blob/master/ANNOUNCEMENT.md",
+      "badge": "https://img.shields.io/badge/ownership-announcement-ff6b00?logo=github&logoColor=white"
+    },
+    {
       "name": "Roadmap",
       "url": "https://github.com/Kushmanmb/.kushhub.inc/blob/master/ROADMAP.md",
       "badge": "https://img.shields.io/badge/Roadmap-view-0075ff?logo=github&logoColor=white"

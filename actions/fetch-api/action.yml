@@ -1,0 +1,56 @@
+name: 'Fetch API'
+description: 'Make an HTTP request using the JavaScript Fetch API and expose the response status, body, and headers as step outputs.'
+
+inputs:
+  url:
+    description: 'URL to fetch (http or https only)'
+    required: true
+  method:
+    description: 'HTTP method — GET, POST, PUT, PATCH, DELETE, HEAD, or OPTIONS'
+    required: false
+    default: 'GET'
+  headers:
+    description: 'JSON object string of request headers (e.g. {"Content-Type":"application/json"})'
+    required: false
+    default: '{}'
+  body:
+    description: 'Request body string (used only for POST, PUT, and PATCH requests)'
+    required: false
+    default: ''
+  timeout:
+    description: 'Request timeout in milliseconds (0 = no timeout)'
+    required: false
+    default: '30000'
+  fail-on-error:
+    description: 'Set to "true" to fail the step when the response status is not 2xx'
+    required: false
+    default: 'false'
+
+outputs:
+  status:
+    description: 'HTTP response status code (e.g. 200)'
+    value: ${{ steps.fetch.outputs.status }}
+  ok:
+    description: '"true" when the response status is 2xx, "false" otherwise'
+    value: ${{ steps.fetch.outputs.ok }}
+  body:
+    description: 'HTTP response body as plain text'
+    value: ${{ steps.fetch.outputs.body }}
+  headers:
+    description: 'HTTP response headers serialised as a JSON object'
+    value: ${{ steps.fetch.outputs.headers }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Fetch API
+      id: fetch
+      shell: bash
+      env:
+        FETCH_URL: ${{ inputs.url }}
+        FETCH_METHOD: ${{ inputs.method }}
+        FETCH_HEADERS: ${{ inputs.headers }}
+        FETCH_BODY: ${{ inputs.body }}
+        FETCH_TIMEOUT: ${{ inputs.timeout }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: node "${{ github.action_path }}/fetch.js"

@@ -6,6 +6,7 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 [![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
 [![Ownership Announcement](https://img.shields.io/badge/ownership-announcement-ff6b00?logo=github&logoColor=white)](ANNOUNCEMENT.md)
 [![Tokens Transparency Log](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml)
+[![Approval Diagnosis](https://github.com/Kushmanmb/.github/actions/workflows/approval-diagnosis.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/approval-diagnosis.yml)
 [![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
 [![Basename: kushmanmb.base.eth](https://img.shields.io/badge/Basename-kushmanmb.base.eth-0052ff?logo=coinbase&logoColor=white)](https://www.base.org/name/kushmanmb)
 
@@ -42,6 +43,7 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 |----------|-------------|
 | [`.github/workflows/build.yml`](.github/workflows/build.yml) | Full lint → test → build pipeline via `workflow_call` |
 | [`.github/workflows/tokens-transparency.yml`](.github/workflows/tokens-transparency.yml) | Fetch `tokens.json`, debug raw contents, and emit a human-readable transparency log |
+| [`.github/workflows/approval-diagnosis.yml`](.github/workflows/approval-diagnosis.yml) | Derive wallet address, query ERC-20 `Approval` events via Etherscan API, and report active approvals powered by BlockSec MetaSuites |
 | [`.github/workflows/project-board-automation.yml`](.github/workflows/project-board-automation.yml) | Automate GitHub project board management |
 | [`.github/workflows/auto-close-external-prs.yml`](.github/workflows/auto-close-external-prs.yml) | Automatically close PRs from external contributors |
 

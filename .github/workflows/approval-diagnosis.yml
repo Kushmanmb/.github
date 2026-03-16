@@ -1,0 +1,301 @@
+name: Approval Diagnosis
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to diagnose (mainnet or sepolia)'
+        required: false
+        default: 'mainnet'
+        type: choice
+        options:
+          - mainnet
+          - sepolia
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  diagnosis:
+    name: BlockSec MetaSuites — Approval Diagnosis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install wallet
+        id: wallet
+        uses: Kushmanmb/.github/actions/install-wallet@master
+        with:
+          user-identity: ${{ github.actor }}
+          key-salt: ${{ secrets.WALLET_KEY_SALT }}
+          tokens-file: tokens.json
+
+      - name: Resolve ENS
+        id: ens
+        uses: Kushmanmb/.github/actions/resolve-ens@master
+        with:
+          tokens-file: tokens.json
+          wallet-address: ${{ steps.wallet.outputs.wallet-address }}
+          user-identity: ${{ github.actor }}
+
+      - name: Run approval diagnosis
+        id: diagnosis
+        shell: bash
+        env:
+          WALLET_ADDRESS: ${{ steps.wallet.outputs.wallet-address }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          TOKENS_FILE: tokens.json
+        run: |
+          set -euo pipefail
+
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          ENS_NAME=$(jq -r '.ens.name // "N/A"' "$TOKENS_FILE")
+
+          case "$NETWORK" in
+            mainnet) API_URL="https://api.etherscan.io/api"        ; EXPLORER="https://etherscan.io" ;;
+            sepolia) API_URL="https://api-sepolia.etherscan.io/api" ; EXPLORER="https://sepolia.etherscan.io" ;;
+            *)       echo "::error::Unsupported network: $NETWORK" ; exit 1 ;;
+          esac
+
+          echo "======================================================="
+          echo "  APPROVAL DIAGNOSIS — Kushmanmb / Matthew Brace"
+          echo "  Powered by BlockSec MetaSuites"
+          echo "  Generated:  $TIMESTAMP"
+          echo "  Address:    $WALLET_ADDRESS"
+          echo "  ENS:        $ENS_NAME"
+          echo "  Network:    $NETWORK"
+          echo "  Explorer:   ${EXPLORER}/address/${WALLET_ADDRESS}"
+          echo "  Docs:       https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis"
+          echo "======================================================="
+          echo ""
+
+          # Keccak-256 of Approval(address,address,uint256)
+          APPROVAL_TOPIC0="0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+          # uint256 max — indicates an unlimited (infinite) approval
+          UNLIMITED_VALUE="0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          # zero value — indicates the approval has been revoked
+          ZERO_VALUE="0x0000000000000000000000000000000000000000000000000000000000000000"
+
+          # Pad wallet address to 32 bytes for topic1 (owner field)
+          ADDR_HEX_LOWER=$(echo "${WALLET_ADDRESS#0x}" | tr '[:upper:]' '[:lower:]')
+          PADDED_ADDR="0x000000000000000000000000${ADDR_HEX_LOWER}"
+
+          if [[ -z "${ETHERSCAN_API_KEY:-}" ]]; then
+            echo "─── API Key Not Configured ──────────────────────────"
+            echo "  ETHERSCAN_API_KEY secret is not set."
+            echo "  Set this secret to enable on-chain approval queries."
+            echo ""
+            echo "─── Manual Approval Diagnosis ───────────────────────"
+            echo "  Install the BlockSec MetaSuites browser extension:"
+            echo "  https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis"
+            echo ""
+            echo "  Then visit the address page on the block explorer:"
+            echo "  ${EXPLORER}/address/${WALLET_ADDRESS}"
+            echo ""
+            echo "  Or use the Etherscan Token Approval Checker:"
+            echo "  ${EXPLORER}/tokenapprovalchecker?search=${WALLET_ADDRESS}"
+            echo ""
+            {
+              echo "api_available=false"
+              echo "active_approvals=N/A"
+              echo "timestamp=$TIMESTAMP"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "─── Querying On-Chain Approval Events ───────────────"
+            echo "  Endpoint:  $API_URL"
+            echo "  Topic0:    $APPROVAL_TOPIC0"
+            echo "  Topic1:    $PADDED_ADDR"
+            echo ""
+
+            RESPONSE=$(curl -fsSL --max-time 30 \
+              "${API_URL}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${APPROVAL_TOPIC0}&topic0_1_opr=and&topic1=${PADDED_ADDR}&apikey=${ETHERSCAN_API_KEY}") \
+              || { echo "::warning::curl request failed — check ETHERSCAN_API_KEY and network connectivity."
+                   {
+                     echo "api_available=false"
+                     echo "active_approvals=0"
+                     echo "timestamp=$TIMESTAMP"
+                   } >> "$GITHUB_OUTPUT"
+                   exit 0; }
+
+            STATUS=$(echo "$RESPONSE"  | jq -r '.status  // "0"')
+            MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "NOTOK"')
+
+            if [[ "$STATUS" != "1" && "$MESSAGE" != "No records found" ]]; then
+              echo "::warning::Etherscan API status=$STATUS message=$MESSAGE"
+              echo "  Visit ${EXPLORER}/tokenapprovalchecker?search=${WALLET_ADDRESS} to check manually."
+              {
+                echo "api_available=false"
+                echo "active_approvals=0"
+                echo "timestamp=$TIMESTAMP"
+              } >> "$GITHUB_OUTPUT"
+            else
+              RESULTS=$(echo "$RESPONSE" | jq '.result // []')
+              TOTAL_EVENTS=$(echo "$RESULTS" | jq 'length')
+
+              # Group events by (token contract, spender) and keep the latest per pair.
+              # Etherscan returns logs in ascending block order so the last element in
+              # each group is the most recent event for that (token, spender) pair.
+              # Then filter to active (non-zero) approvals.
+              ACTIVE_JSON=$(echo "$RESULTS" | jq -c \
+                --arg unlimited "$UNLIMITED_VALUE" \
+                --arg zero "$ZERO_VALUE" '
+                group_by(.address + "|" + .topics[2]) |
+                map(
+                  map(select(.topics | length >= 3)) |
+                  last |
+                  select(. != null) |
+                  {
+                    token:     .address,
+                    # topics[2] is the spender address padded to 32 bytes;
+                    # the last 40 hex chars (20 bytes) are the actual address.
+                    spender:   ("0x" + (.topics[2] | .[-40:])),
+                    tx:        .transactionHash,
+                    unlimited: (.data == $unlimited),
+                    zero:      (.data == $zero)
+                  }
+                ) |
+                map(select(.zero == false))')
+
+              ACTIVE_COUNT=$(echo "$ACTIVE_JSON"    | jq 'length')
+              UNLIMITED_COUNT=$(echo "$ACTIVE_JSON" | jq '[.[] | select(.unlimited)] | length')
+              TOTAL_PAIRS=$(echo "$RESULTS" | jq '
+                group_by(.address + "|" + .topics[2]) |
+                map(map(select(.topics | length >= 3)) | last | select(. != null)) |
+                length')
+              REVOKED_COUNT=$((TOTAL_PAIRS - ACTIVE_COUNT))
+
+              echo "─── Approval Events Found ───────────────────────────"
+              echo "  Total Approval events:    $TOTAL_EVENTS"
+              echo "  Active approvals:         $ACTIVE_COUNT"
+              echo "  Revoked approvals:        $REVOKED_COUNT"
+              echo ""
+
+              if [[ "$ACTIVE_COUNT" -eq 0 ]]; then
+                echo "  ✅  No active token approvals found for this address."
+                echo "      This address has not granted any ERC-20 approval that"
+                echo "      remains active on $NETWORK."
+              else
+                if [[ "$UNLIMITED_COUNT" -gt 0 ]]; then
+                  echo "  ⚠️  ${UNLIMITED_COUNT} UNLIMITED approval(s) detected!"
+                  echo "      Unlimited approvals grant spender contracts unrestricted"
+                  echo "      access to spend the approved token from this wallet."
+                  echo ""
+                fi
+
+                echo "─── Active Approvals ────────────────────────────────"
+                echo "$ACTIVE_JSON" | jq -r '.[] |
+                  (if .unlimited then "  ⚠️  [UNLIMITED]" else "  •  [LIMITED  ]" end) +
+                  "  Token:   " + .token + "\n" +
+                  "              Spender: " + .spender + "\n" +
+                  "              Tx:      " + .tx'
+              fi
+
+              echo ""
+              echo "─── Further Diagnosis ───────────────────────────────"
+              echo "  BlockSec MetaSuites (recommended for risk assessment):"
+              echo "  https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis"
+              echo ""
+              echo "  Etherscan Token Approval Checker:"
+              echo "  ${EXPLORER}/tokenapprovalchecker?search=${WALLET_ADDRESS}"
+              echo "======================================================="
+
+              {
+                echo "api_available=true"
+                echo "active_approvals=$ACTIVE_COUNT"
+                echo "unlimited_approvals=$UNLIMITED_COUNT"
+                echo "total_events=$TOTAL_EVENTS"
+                echo "revoked_count=$REVOKED_COUNT"
+                echo "timestamp=$TIMESTAMP"
+              } >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Write Markdown Step Summary
+        shell: bash
+        env:
+          WALLET_ADDRESS: ${{ steps.wallet.outputs.wallet-address }}
+          ENS_NAME: ${{ steps.ens.outputs.ens-name }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
+          API_AVAILABLE: ${{ steps.diagnosis.outputs.api_available }}
+          ACTIVE_APPROVALS: ${{ steps.diagnosis.outputs.active_approvals }}
+          UNLIMITED_APPROVALS: ${{ steps.diagnosis.outputs.unlimited_approvals }}
+          TOTAL_EVENTS: ${{ steps.diagnosis.outputs.total_events }}
+          REVOKED_COUNT: ${{ steps.diagnosis.outputs.revoked_count }}
+          TIMESTAMP: ${{ steps.diagnosis.outputs.timestamp }}
+        run: |
+          case "$NETWORK" in
+            mainnet) EXPLORER="https://etherscan.io" ;;
+            sepolia) EXPLORER="https://sepolia.etherscan.io" ;;
+            *)       EXPLORER="https://etherscan.io" ;;
+          esac
+
+          {
+            echo "# 🔐 Approval Diagnosis — Kushmanmb / Matthew Brace"
+            echo ""
+            echo "> **Powered by** [BlockSec MetaSuites Approval Diagnosis](https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis)  "
+            echo "> **Generated:** \`${TIMESTAMP}\`  "
+            echo "> **Address:** [\`${WALLET_ADDRESS}\`](${EXPLORER}/address/${WALLET_ADDRESS})  "
+            echo "> **ENS:** \`${ENS_NAME:-N/A}\`  "
+            echo "> **Network:** ${NETWORK}"
+            echo ""
+            echo "## Summary"
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+
+            if [[ "$API_AVAILABLE" == "true" ]]; then
+              echo "| Total Approval events | ${TOTAL_EVENTS:-0} |"
+              echo "| Active approvals | **${ACTIVE_APPROVALS:-0}** |"
+              echo "| Unlimited approvals | ${UNLIMITED_APPROVALS:-0} |"
+              echo "| Revoked approvals | ${REVOKED_COUNT:-0} |"
+              echo ""
+
+              if [[ "${ACTIVE_APPROVALS:-0}" == "0" ]]; then
+                echo "✅ **No active token approvals found.** This address has not granted any ERC-20 approval that remains active on **${NETWORK}**."
+              else
+                echo "⚠️ **${ACTIVE_APPROVALS} active approval(s) found.**"
+                if [[ "${UNLIMITED_APPROVALS:-0}" != "0" ]]; then
+                  echo "**${UNLIMITED_APPROVALS} of these are UNLIMITED approvals** — these grant spender contracts unrestricted access to the approved token."
+                fi
+                echo ""
+                echo "Use [BlockSec MetaSuites Approval Diagnosis](https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis) for a full risk assessment and to revoke any suspicious approvals."
+              fi
+            else
+              echo "| On-chain query | Skipped (\`ETHERSCAN_API_KEY\` not configured) |"
+              echo ""
+              echo "> 💡 Set the \`ETHERSCAN_API_KEY\` repository secret to enable on-chain approval queries."
+            fi
+
+            echo ""
+            echo "## Resources"
+            echo "| Resource | Link |"
+            echo "|----------|------|"
+            echo "| BlockSec MetaSuites Approval Diagnosis | [Open](https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis) |"
+            echo "| Etherscan Token Approval Checker | [Open](${EXPLORER}/tokenapprovalchecker?search=${WALLET_ADDRESS}) |"
+            echo "| Address on Explorer | [\`${WALLET_ADDRESS}\`](${EXPLORER}/address/${WALLET_ADDRESS}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Annotate workflow run
+        shell: bash
+        env:
+          WALLET_ADDRESS: ${{ steps.wallet.outputs.wallet-address }}
+          ENS_NAME: ${{ steps.ens.outputs.ens-name }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
+          ACTIVE_APPROVALS: ${{ steps.diagnosis.outputs.active_approvals }}
+          UNLIMITED_APPROVALS: ${{ steps.diagnosis.outputs.unlimited_approvals }}
+          API_AVAILABLE: ${{ steps.diagnosis.outputs.api_available }}
+        run: |
+          if [[ "$API_AVAILABLE" == "true" ]]; then
+            if [[ "${ACTIVE_APPROVALS:-0}" == "0" ]]; then
+              echo "::notice title=Approval Diagnosis::${WALLET_ADDRESS} (${ENS_NAME:-N/A}) on ${NETWORK} — no active ERC-20 approvals found. ✅"
+            elif [[ "${UNLIMITED_APPROVALS:-0}" != "0" ]]; then
+              echo "::warning title=Approval Diagnosis::${WALLET_ADDRESS} (${ENS_NAME:-N/A}) on ${NETWORK} — ${ACTIVE_APPROVALS} active approval(s), ${UNLIMITED_APPROVALS} UNLIMITED. Review with BlockSec MetaSuites."
+            else
+              echo "::notice title=Approval Diagnosis::${WALLET_ADDRESS} (${ENS_NAME:-N/A}) on ${NETWORK} — ${ACTIVE_APPROVALS} active ERC-20 approval(s)."
+            fi
+          else
+            echo "::notice title=Approval Diagnosis::${WALLET_ADDRESS} (${ENS_NAME:-N/A}) on ${NETWORK} — on-chain query skipped (ETHERSCAN_API_KEY not configured)."
+          fi

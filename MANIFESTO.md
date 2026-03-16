@@ -45,13 +45,13 @@ Do one thing well rather than many things poorly.
 - Dependencies are added deliberately and removed when no longer needed.
 - Infrastructure is right-sized for the actual workload.
 
-## 6. Open Collaboration, Controlled Contribution
+## 6. Sole Ownership — No External Contributions
 
-Feedback and ideas are welcome; the codebase is maintained to a high bar.
+This account is maintained exclusively by @Kushmanmb. External contributions are not accepted.
 
-- Issues and suggestions are reviewed and responded to promptly.
-- External pull requests are evaluated against the principles in this manifesto.
-- The contributor guide explains exactly how to propose changes.
+- All pull requests from accounts outside the sole-owner allow-list are closed automatically.
+- Issues may be opened to report bugs or suggest improvements; they will be reviewed by the owner.
+- There is no contributor guide because there are no external contributors.
 
 ## 7. Continuous Improvement
 

@@ -24,8 +24,9 @@ Full reference documentation for every composite action and reusable workflow pu
    - [auto-close-external-prs](#auto-close-external-prs)
 4. [Rust Libraries](#rust-libraries)
    - [zkpdf_lib](#zkpdf_lib)
-5. [Versioning and Releases](#versioning-and-releases)
-6. [Contributing](#contributing)
+5. [Ownership](#ownership)
+6. [Versioning and Releases](#versioning-and-releases)
+7. [Contributing](#contributing)
 
 ---
 
@@ -598,7 +599,14 @@ jobs:
 
 **Path:** `.github/workflows/auto-close-external-prs.yml`
 
-Triggered on `pull_request_target` (opened / reopened).  Closes any PR whose author is not in the allowed-users list and posts a comment explaining why.
+Triggered on `pull_request_target` (opened / reopened).  Closes any PR whose author is not in the sole-owner allow-list and posts a comment explaining why.
+
+**Allowed users** (the complete list — all others are rejected):
+
+| Identity | Role |
+|----------|------|
+| `Kushmanmb` | Sole owner |
+| `dependabot[bot]` | Automated dependency updates (reviewed and merged by owner) |
 
 No inputs or secrets are required beyond the repository-scoped `READ_GITHUB_ORG_MEMBERS_TOKEN` secret.
 
@@ -700,6 +708,20 @@ let result = verify_pdf_claim(input)?;
 
 ---
 
+## Ownership
+
+**Path:** `ANNOUNCEMENT.md`
+
+A formal global site-ownership declaration covering all repositories, actions, workflows,
+packages, the ENS name `kushmanmb.eth`, and the wallet identity chain under the
+**@Kushmanmb** account.
+
+See [`ANNOUNCEMENT.md`](../ANNOUNCEMENT.md) for the full statement, including the
+complete integrity chain from GitHub identity → HMAC-SHA256 key derivation → Ethereum
+address → ENS binding.
+
+---
+
 ## Versioning and Releases
 
 This repository follows [Semantic Versioning](https://semver.org/):
@@ -728,6 +750,6 @@ The workflow will:
 
 ## Contributing
 
-External contributions are not accepted; all pull requests from accounts outside the allow-list are closed automatically.  For questions or suggestions, open an issue — it will be reviewed by @Kushmanmb.
+**External contributions are not accepted.**  All pull requests from accounts outside the sole-owner allow-list (`@Kushmanmb`, `dependabot[bot]`) are closed automatically by the `auto-close-external-prs` workflow.  For questions or bug reports, open an issue — it will be reviewed by @Kushmanmb.
 
-See the [Manifesto](../MANIFESTO.md) for the principles that guide every decision in this repository.
+See the [Manifesto](../MANIFESTO.md) for the principles that guide every decision in this repository, and [ANNOUNCEMENT.md](../ANNOUNCEMENT.md) for the global ownership statement.

@@ -32,7 +32,6 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 - [x] Implement `zkpdf_lib` — Rust library providing `PDFCircuitInput` and `verify_pdf_claim` for ZK-verifiable PDF substring claims
 - [ ] Explore WASM-based proof verification as a CI gate in `fetch-proofs`
 - [ ] Open-source the complete automation toolkit under a permissive license
-- [ ] Establish a contributor guide and public issue tracker for community feedback
 
 ## Completed
 
@@ -51,3 +50,4 @@ This document outlines the planned direction for Kushmanmb's GitHub presence, op
 - [x] Update `install-wallet` — reads `tokens.json` for ENS name; writes full identity → address → ENS path into `wallet.json`
 - [x] Add `resolve-ens` composite action — validates the complete identity → signing key → address → `kushmanmb.eth` token chain
 - [x] Add ENS and Etherscan portal entries to `links.json` and `profile/README.md`
+- [x] Publish global site-ownership announcement (`ANNOUNCEMENT.md`) and update `profile/README.md`, `README.md`, and `MANIFESTO.md` to enforce sole-owner policy; tighten `auto-close-external-prs` allow-list to `@Kushmanmb` + `dependabot[bot]`

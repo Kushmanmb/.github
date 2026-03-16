@@ -2,15 +2,22 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 
 ## Kushmanmb
 
-[![Owner: Kushmanmb](https://img.shields.io/badge/owner-Kushmanmb-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb)
+[![Sole Owner: Kushmanmb](https://img.shields.io/badge/sole%20owner-Kushmanmb-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb)
+[![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
+[![Ownership Announcement](https://img.shields.io/badge/ownership-announcement-ff6b00?logo=github&logoColor=white)](ANNOUNCEMENT.md)
 [![Tokens Transparency Log](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml)
+
+> **📣 Global Ownership Announcement** — All repositories, actions, workflows, and packages
+> under this account are the sole property of **@Kushmanmb**. External contributions are not
+> accepted. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) for the full ownership statement.
 
 Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
+- 📣 [Ownership Announcement](ANNOUNCEMENT.md) — global site-ownership declaration
 - 📋 [Roadmap](ROADMAP.md) — where things are headed
 - 📜 [Manifesto](MANIFESTO.md) — the principles behind everything built here
 - 📖 [Wiki](docs/WIKI.md) — full documentation for all actions and workflows
-- 👥 [Code Owners](CODEOWNERS) — who owns what in this repository
+- 👤 [Code Owners](CODEOWNERS) — sole owner of this repository
 
 ## Composite Actions
 

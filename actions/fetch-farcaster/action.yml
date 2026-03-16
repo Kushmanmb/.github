@@ -1,0 +1,67 @@
+name: 'Fetch Farcaster'
+description: 'Fetch a Farcaster user profile via the public Warpcast API and expose profile fields as step outputs.'
+
+inputs:
+  username:
+    description: 'Farcaster username to look up (without the leading @)'
+    required: false
+    default: 'kushmanmb'
+  fail-on-error:
+    description: 'Set to "true" to fail the step when the API returns a non-2xx status'
+    required: false
+    default: 'false'
+
+outputs:
+  fid:
+    description: 'Farcaster ID (FID) of the user'
+    value: ${{ steps.parse.outputs.fid }}
+  username:
+    description: 'Farcaster username'
+    value: ${{ steps.parse.outputs.username }}
+  display-name:
+    description: 'Display name of the user'
+    value: ${{ steps.parse.outputs.display_name }}
+  bio:
+    description: 'Profile bio / description'
+    value: ${{ steps.parse.outputs.bio }}
+  follower-count:
+    description: 'Number of followers'
+    value: ${{ steps.parse.outputs.follower_count }}
+  following-count:
+    description: 'Number of accounts the user follows'
+    value: ${{ steps.parse.outputs.following_count }}
+  pfp-url:
+    description: 'Profile picture URL'
+    value: ${{ steps.parse.outputs.pfp_url }}
+  verifications:
+    description: 'JSON array of verified Ethereum addresses linked to the account'
+    value: ${{ steps.parse.outputs.verifications }}
+  profile-url:
+    description: 'Warpcast profile URL'
+    value: ${{ steps.parse.outputs.profile_url }}
+  raw-json:
+    description: 'Full raw JSON response body from the Warpcast API'
+    value: ${{ steps.fetch.outputs.body }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Fetch Farcaster profile
+      id: fetch
+      uses: Kushmanmb/.github/actions/fetch-api@master
+      with:
+        url: 'https://api.warpcast.com/v2/user-by-username?username=${{ inputs.username }}'
+        method: 'GET'
+        headers: '{"Accept":"application/json"}'
+        timeout: '30000'
+        fail-on-error: ${{ inputs.fail-on-error }}
+
+    - name: Parse Farcaster profile
+      id: parse
+      shell: bash
+      env:
+        RESPONSE_BODY: ${{ steps.fetch.outputs.body }}
+        RESPONSE_OK: ${{ steps.fetch.outputs.ok }}
+        FARCASTER_USERNAME: ${{ inputs.username }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: node "${{ github.action_path }}/parse.js"

@@ -58,6 +58,11 @@ on:
         type: string
         default: 'self-hosted'
 
+permissions:
+  contents: read
+  members: read
+  organization-administration: write
+
 jobs:
   build:
     runs-on: ${{ inputs.runs-on }}

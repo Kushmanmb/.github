@@ -20,6 +20,8 @@ Full reference documentation for every composite action and reusable workflow pu
    - [resolve-ens](#resolve-ens)
 3. [Reusable Workflows](#reusable-workflows)
    - [build](#build)
+   - [tokens-transparency](#tokens-transparency)
+   - [approval-diagnosis](#approval-diagnosis)
    - [project-board-automation](#project-board-automation)
    - [auto-close-external-prs](#auto-close-external-prs)
 4. [Rust Libraries](#rust-libraries)
@@ -566,6 +568,71 @@ jobs:
     with:
       working-directory: frontend
       node-version: '20'
+```
+
+---
+
+### tokens-transparency
+
+**Path:** `.github/workflows/tokens-transparency.yml`
+
+Triggered on `workflow_dispatch` and on every push to `master` that modifies `tokens.json`.  Validates the file, dumps its raw contents, emits a human-readable transparency log, and writes a Markdown step summary covering ENS, Base ENS, wallet derivation, token list, and explorer links for Kushmanmb / Matthew Brace.
+
+#### Triggers
+
+| Event | Condition |
+|-------|-----------|
+| `workflow_dispatch` | Manual run |
+| `push` | Branch `master`, path `tokens.json` |
+
+No inputs, outputs, or secrets are required.
+
+---
+
+### approval-diagnosis
+
+**Path:** `.github/workflows/approval-diagnosis.yml`
+
+Derives the wallet address via `install-wallet`, resolves the ENS name via `resolve-ens`, then queries the Etherscan API for all ERC-20 `Approval` events where the wallet is the owner.  Events are grouped by `(token contract, spender)` and deduplicated to the most recent approval per pair.  Active (non-zero value) approvals are reported with unlimited-approval warnings.  A Markdown step summary and workflow annotation are emitted.  Powered by [BlockSec MetaSuites Approval Diagnosis](https://docs.blocksec.com/metasuites/user-security-features/approval-diagnosis).
+
+#### Triggers
+
+| Event | Condition |
+|-------|-----------|
+| `workflow_dispatch` | Manual run with optional `network` input |
+| `schedule` | Every Monday at 06:00 UTC (`0 6 * * 1`) |
+
+#### Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `network` | No | `mainnet` | Network to diagnose: `mainnet` or `sepolia` |
+
+#### Secrets
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `WALLET_KEY_SALT` | No | Additional salt mixed into the HMAC-SHA256 wallet key derivation |
+| `ETHERSCAN_API_KEY` | No | Etherscan API key for on-chain approval queries.  When omitted the workflow emits manual-diagnosis instructions instead. |
+
+#### Outputs (step: `diagnosis`)
+
+| Output | Description |
+|--------|-------------|
+| `api_available` | `true` when the Etherscan query succeeded; `false` otherwise |
+| `active_approvals` | Number of active (non-zero) approvals found, or `N/A` when the API was skipped |
+| `unlimited_approvals` | Number of unlimited (`uint256` max) approvals found |
+| `total_events` | Total raw `Approval` log events returned by Etherscan |
+| `revoked_count` | Number of (token, spender) pairs whose latest approval value is zero |
+| `timestamp` | ISO-8601 timestamp of the run |
+
+#### Example
+
+```yaml
+# Trigger manually from the Actions tab, or let the weekly schedule run it.
+# Add the optional secrets for full on-chain querying:
+#   WALLET_KEY_SALT    — extra entropy for the wallet key derivation
+#   ETHERSCAN_API_KEY  — enables live on-chain Approval event queries
 ```
 
 ---

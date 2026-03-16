@@ -46,7 +46,7 @@ jobs:
           FILE="tokens.json"
 
           echo "======================================================="
-          echo "  KUSHMANMB / MATTHEW BRACE — TOKENS TRANSPARENCY LOG"
+          echo "  KUSHMANMB — TOKENS TRANSPARENCY LOG"
           echo "  Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           echo "  Source:    ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/tokens.json"
           echo "======================================================="
@@ -178,7 +178,7 @@ jobs:
           NETWORK_LIST="${{ steps.report.outputs.networks }}"
 
           {
-            echo "# 🔍 Tokens Transparency Log — Kushmanmb / Matthew Brace"
+            echo "# 🔍 Tokens Transparency Log — Kushmanmb"
             echo ""
             echo "> **Generated:** \`${TIMESTAMP}\`  "
             echo "> **Source:** [tokens.json](${SOURCE_URL})"
@@ -252,4 +252,4 @@ jobs:
           TOTAL_TOKENS="${{ steps.report.outputs.token_count }}"
           TOTAL_EXPLORERS="${{ steps.report.outputs.explorer_count }}"
           NETWORKS="${{ steps.report.outputs.networks }}"
-          echo "::notice title=Transparency Report::tokens.json — $TOTAL_TOKENS token(s) across [$NETWORKS] with $TOTAL_EXPLORERS explorer(s) registered for Kushmanmb / Matthew Brace."
+          echo "::notice title=Transparency Report::tokens.json — $TOTAL_TOKENS token(s) across [$NETWORKS] with $TOTAL_EXPLORERS explorer(s) registered for Kushmanmb."

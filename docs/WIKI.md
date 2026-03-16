@@ -37,7 +37,7 @@ Full reference documentation for every composite action and reusable workflow pu
 All actions and workflows in this repository are designed to be consumed by other repositories in the Kushmanmb GitHub organization.  Reference them by tag for reproducible builds:
 
 ```yaml
-- uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
+- uses: Kushmanmb/.github/actions/node-ci@v1
 ```
 
 ---
@@ -66,7 +66,7 @@ Checks out the repository, sets up Node.js, caches `node_modules`, and installs 
 
 ```yaml
 - name: Setup Node.js CI
-  uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
+  uses: Kushmanmb/.github/actions/node-ci@v1
   with:
     working-directory: frontend
     node-version: '20'
@@ -100,7 +100,7 @@ Runs lint, test, and build steps for a Node.js project.  Each step runs a `yarn`
 
 ```yaml
 - name: Lint, Test, and Build
-  uses: Kushmanmb/.kushhub.inc/actions/lint-test-build@v1
+  uses: Kushmanmb/.github/actions/lint-test-build@v1
   with:
     working-directory: frontend
     flavor: dev
@@ -140,7 +140,7 @@ Reads a `rust-toolchain` file, restores the Cargo dependency cache, and installs
 
 ```yaml
 - name: Setup Rust
-  uses: Kushmanmb/.kushhub.inc/actions/setup-rust@v1
+  uses: Kushmanmb/.github/actions/setup-rust@v1
   with:
     working-directory: ${{ github.workspace }}
     flavor: prod
@@ -172,7 +172,7 @@ Computes a deterministic 12-character hash from the HEAD SHAs of two external re
 ```yaml
 - name: Compute asset cache key
   id: asset-hash
-  uses: Kushmanmb/.kushhub.inc/actions/compute-asset-hash@v1
+  uses: Kushmanmb/.github/actions/compute-asset-hash@v1
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -208,7 +208,7 @@ Proof files are discovered by matching any of:
 
 ```yaml
 - name: Fetch ZK proofs
-  uses: Kushmanmb/.kushhub.inc/actions/fetch-proofs@v1
+  uses: Kushmanmb/.github/actions/fetch-proofs@v1
   with:
     search-path: ./output
     artifact-name: my-proof-artifacts
@@ -243,7 +243,7 @@ Restores cached mining-pool and promo-video asset bundles.  Optionally downloads
 
 ```yaml
 - name: Restore assets
-  uses: Kushmanmb/.kushhub.inc/actions/restore-assets@v1
+  uses: Kushmanmb/.github/actions/restore-assets@v1
   with:
     frontend-path: frontend
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -278,7 +278,7 @@ Syncs assets from a CDN, zips them, uploads them as workflow artifacts, and save
 
 ```yaml
 - name: Sync and cache assets
-  uses: Kushmanmb/.kushhub.inc/actions/sync-assets@v1
+  uses: Kushmanmb/.github/actions/sync-assets@v1
   with:
     frontend-path: frontend
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -327,7 +327,7 @@ Derives an embedded signing key from a user identity string using domain-keyed H
 ```yaml
 - name: Install wallet
   id: wallet
-  uses: Kushmanmb/.kushhub.inc/actions/install-wallet@v1
+  uses: Kushmanmb/.github/actions/install-wallet@v1
   with:
     user-identity: ${{ github.actor }}
     key-salt: ${{ github.run_id }}
@@ -382,7 +382,7 @@ The `badge` field is optional and is used exclusively by `profile/README.md` to 
 ```yaml
 - name: Check portal links
   id: links
-  uses: Kushmanmb/.kushhub.inc/actions/manage-links@v1
+  uses: Kushmanmb/.github/actions/manage-links@v1
   with:
     links-file: links.json
     fail-on-error: 'true'
@@ -470,14 +470,14 @@ Kushmanmb → hmac-sha256(identity:salt) → hmac-sha256(round1_hash) → 0x<add
 ```yaml
 - name: Install wallet
   id: wallet
-  uses: Kushmanmb/.kushhub.inc/actions/install-wallet@v1
+  uses: Kushmanmb/.github/actions/install-wallet@v1
   with:
     user-identity: ${{ github.actor }}
     tokens-file: tokens.json
 
 - name: Resolve ENS and build token path
   id: ens
-  uses: Kushmanmb/.kushhub.inc/actions/resolve-ens@v1
+  uses: Kushmanmb/.github/actions/resolve-ens@v1
   with:
     tokens-file: tokens.json
     wallet-address: ${{ steps.wallet.outputs.wallet-address }}
@@ -564,7 +564,7 @@ A `workflow_call` pipeline that runs Node.js lint → test → build steps using
 ```yaml
 jobs:
   build:
-    uses: Kushmanmb/.kushhub.inc/.github/workflows/build.yml@v1
+    uses: Kushmanmb/.github/.github/workflows/build.yml@v1
     with:
       working-directory: frontend
       node-version: '20'
@@ -665,7 +665,7 @@ A `workflow_call` workflow that automatically adds issues and PRs to a GitHub pr
 ```yaml
 jobs:
   project-board:
-    uses: Kushmanmb/.kushhub.inc/.github/workflows/project-board-automation.yml@v1
+    uses: Kushmanmb/.github/.github/workflows/project-board-automation.yml@v1
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
       PROJECT_ID: ${{ secrets.PROJECT_ID }}

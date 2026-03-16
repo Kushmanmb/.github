@@ -28,6 +28,17 @@ jobs:
           fi
           echo "tokens.json found."
 
+      - name: Debug — dump raw tokens.json
+        shell: bash
+        run: |
+          FILE="tokens.json"
+          echo "::group::Raw tokens.json contents"
+          echo "File: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/tokens.json"
+          echo "Size: $(wc -c < "$FILE") bytes  |  Lines: $(wc -l < "$FILE")"
+          echo "---"
+          cat "$FILE"
+          echo "::endgroup::"
+
       - name: Parse and display transparency log
         id: report
         shell: bash
@@ -106,9 +117,85 @@ jobs:
           # Emit outputs for downstream steps / workflow callers
           {
             echo "token_count=$TOKEN_COUNT"
+            echo "native_count=$NATIVE_COUNT"
+            echo "erc20_count=$ERC20_COUNT"
             echo "explorer_count=$EXPLORER_COUNT"
             echo "networks=$NETWORK_LIST"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Write Markdown Step Summary
+        shell: bash
+        run: |
+          FILE="tokens.json"
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          SOURCE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/tokens.json"
+
+          ENS_NAME=$(jq -r '.ens.name     // "N/A"' "$FILE")
+          ENS_NET=$(jq -r  '.ens.network  // "N/A"' "$FILE")
+          ENS_CID=$(jq -r  '.ens.chain_id // "N/A"' "$FILE")
+          ENS_REG=$(jq -r  '.ens.registry // "N/A"' "$FILE")
+          ENS_RES=$(jq -r  '.ens.resolver // "N/A"' "$FILE")
+
+          W_TYPE=$(jq -r  '.wallet.key_type           // "N/A"' "$FILE")
+          W_DOM=$(jq -r   '.wallet.domain_key         // "N/A"' "$FILE")
+          W_DERIV=$(jq -r '.wallet.address_derivation // "N/A"' "$FILE")
+          W_PATH=$(jq -r  '.wallet.path               // "N/A"' "$FILE")
+
+          TOKEN_COUNT="${{ steps.report.outputs.token_count }}"
+          NATIVE_COUNT="${{ steps.report.outputs.native_count }}"
+          ERC20_COUNT="${{ steps.report.outputs.erc20_count }}"
+          EXPLORER_COUNT="${{ steps.report.outputs.explorer_count }}"
+          NETWORK_LIST="${{ steps.report.outputs.networks }}"
+
+          {
+            echo "# 🔍 Tokens Transparency Log — Kushmanmb / Matthew Brace"
+            echo ""
+            echo "> **Generated:** \`${TIMESTAMP}\`  "
+            echo "> **Source:** [tokens.json](${SOURCE_URL})"
+            echo ""
+
+            echo "## ENS Configuration"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Name | \`${ENS_NAME}\` |"
+            echo "| Network | ${ENS_NET} |"
+            echo "| Chain ID | ${ENS_CID} |"
+            echo "| Registry | \`${ENS_REG}\` |"
+            echo "| Resolver | \`${ENS_RES}\` |"
+            echo ""
+
+            echo "## Wallet / Key Derivation"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Key Type | \`${W_TYPE}\` |"
+            echo "| Domain Key | \`${W_DOM}\` |"
+            echo "| Address Derivation | \`${W_DERIV}\` |"
+            echo "| Path | \`${W_PATH}\` |"
+            echo ""
+
+            echo "## Registered Tokens (${TOKEN_COUNT})"
+            echo "| Symbol | Name | Network | Chain ID | Decimals | Type |"
+            echo "|--------|------|---------|----------|----------|------|"
+            jq -r '.tokens[] |
+              "| `\(.symbol)` | \(.name) | \(.network) | \(.chain_id) | \(.decimals) | \(.type) |"
+            ' "$FILE"
+            echo ""
+
+            echo "## Explorers (${EXPLORER_COUNT})"
+            echo "| Key | URL |"
+            echo "|-----|-----|"
+            jq -r '.explorers | to_entries[] | "| \(.key) | [\(.value)](\(.value)) |"' "$FILE"
+            echo ""
+
+            echo "## Summary"
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Total tokens | **${TOKEN_COUNT}** |"
+            echo "| Native tokens | ${NATIVE_COUNT} |"
+            echo "| ERC-20 tokens | ${ERC20_COUNT} |"
+            echo "| Networks covered | ${NETWORK_LIST} |"
+            echo "| Explorers registered | ${EXPLORER_COUNT} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Annotate workflow run with findings
         shell: bash
@@ -116,4 +203,4 @@ jobs:
           TOTAL_TOKENS="${{ steps.report.outputs.token_count }}"
           TOTAL_EXPLORERS="${{ steps.report.outputs.explorer_count }}"
           NETWORKS="${{ steps.report.outputs.networks }}"
-          echo "::notice title=Transparency Report::tokens.json — $TOTAL_TOKENS token(s) across [$NETWORKS] with $TOTAL_EXPLORERS explorer(s) registered for kushmanmb/matthew brace."
+          echo "::notice title=Transparency Report::tokens.json — $TOTAL_TOKENS token(s) across [$NETWORKS] with $TOTAL_EXPLORERS explorer(s) registered for Kushmanmb / Matthew Brace."

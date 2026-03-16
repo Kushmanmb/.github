@@ -3,6 +3,7 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 ## Kushmanmb
 
 [![Owner: Kushmanmb](https://img.shields.io/badge/owner-Kushmanmb-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb)
+[![Tokens Transparency Log](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml)
 
 Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 
@@ -31,6 +32,7 @@ Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 | Workflow | Description |
 |----------|-------------|
 | [`.github/workflows/build.yml`](.github/workflows/build.yml) | Full lint → test → build pipeline via `workflow_call` |
+| [`.github/workflows/tokens-transparency.yml`](.github/workflows/tokens-transparency.yml) | Fetch `tokens.json`, debug raw contents, and emit a human-readable transparency log |
 | [`.github/workflows/project-board-automation.yml`](.github/workflows/project-board-automation.yml) | Automate GitHub project board management |
 | [`.github/workflows/auto-close-external-prs.yml`](.github/workflows/auto-close-external-prs.yml) | Automatically close PRs from external contributors |
 
@@ -40,12 +42,12 @@ Reference any action or workflow at a specific release tag for stability:
 
 ```yaml
 # Composite action
-- uses: Kushmanmb/.kushhub.inc/actions/node-ci@v1
+- uses: Kushmanmb/.github/actions/node-ci@v1
 
 # Reusable workflow
 jobs:
   build:
-    uses: Kushmanmb/.kushhub.inc/.github/workflows/build.yml@v1
+    uses: Kushmanmb/.github/.github/workflows/build.yml@v1
     with:
       working-directory: .
 ```

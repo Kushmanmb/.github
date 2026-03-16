@@ -80,3 +80,14 @@ updates:
       - "Kushmanmb"
     labels:
       - "dependencies"
+
+  # npm packages (root package.json) — includes @ethereumjs/common for Glamsterdam hardfork support
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "Kushmanmb"
+    labels:
+      - "dependencies"
+      - "glamsterdam"

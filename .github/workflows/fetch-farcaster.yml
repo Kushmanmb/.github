@@ -1,0 +1,157 @@
+name: Fetch Farcaster Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Farcaster username to fetch (without the leading @)'
+        required: false
+        default: 'kushmanmb'
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 08:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-farcaster:
+    name: Fetch Farcaster Profile — @${{ github.event.inputs.username || 'kushmanmb' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Farcaster profile
+        id: farcaster
+        uses: Kushmanmb/.github/actions/fetch-farcaster@master
+        with:
+          username: ${{ github.event.inputs.username || 'kushmanmb' }}
+          fail-on-error: 'false'
+
+      - name: Display Farcaster profile
+        shell: bash
+        env:
+          FC_FID:            ${{ steps.farcaster.outputs.fid }}
+          FC_USERNAME:       ${{ steps.farcaster.outputs.username }}
+          FC_DISPLAY_NAME:   ${{ steps.farcaster.outputs.display-name }}
+          FC_BIO:            ${{ steps.farcaster.outputs.bio }}
+          FC_FOLLOWERS:      ${{ steps.farcaster.outputs.follower-count }}
+          FC_FOLLOWING:      ${{ steps.farcaster.outputs.following-count }}
+          FC_PFP_URL:        ${{ steps.farcaster.outputs.pfp-url }}
+          FC_VERIFICATIONS:  ${{ steps.farcaster.outputs.verifications }}
+          FC_PROFILE_URL:    ${{ steps.farcaster.outputs.profile-url }}
+        run: |
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+          echo "======================================================="
+          echo "  FARCASTER PROFILE — @${FC_USERNAME}"
+          echo "  Generated: ${TIMESTAMP}"
+          echo "  Profile:   ${FC_PROFILE_URL}"
+          echo "======================================================="
+          echo ""
+          echo "─── Identity ────────────────────────────────────────"
+          echo "  FID:          ${FC_FID}"
+          echo "  Username:     @${FC_USERNAME}"
+          echo "  Display Name: ${FC_DISPLAY_NAME}"
+          echo ""
+          echo "─── Bio ─────────────────────────────────────────────"
+          echo "  ${FC_BIO:-(no bio set)}"
+          echo ""
+          echo "─── Social ──────────────────────────────────────────"
+          echo "  Followers:  ${FC_FOLLOWERS}"
+          echo "  Following:  ${FC_FOLLOWING}"
+          echo ""
+
+          V_COUNT=$(echo "${FC_VERIFICATIONS}" | node -e \
+            "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).length);}catch{console.log(0);}})" 2>/dev/null || echo "0")
+
+          echo "─── Verified Ethereum Addresses (${V_COUNT}) ─────────────"
+          if [[ "${V_COUNT}" == "0" ]]; then
+            echo "  (none)"
+          else
+            echo "${FC_VERIFICATIONS}" | node -e \
+              "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{JSON.parse(d).forEach(a=>console.log('  '+a));}catch{console.log('  (parse error)');}})" 2>/dev/null || true
+          fi
+
+          echo ""
+          echo "─── Profile Picture ─────────────────────────────────"
+          echo "  ${FC_PFP_URL:-(none)}"
+          echo ""
+          echo "======================================================="
+
+      - name: Write Markdown Step Summary
+        shell: bash
+        env:
+          FC_FID:            ${{ steps.farcaster.outputs.fid }}
+          FC_USERNAME:       ${{ steps.farcaster.outputs.username }}
+          FC_DISPLAY_NAME:   ${{ steps.farcaster.outputs.display-name }}
+          FC_BIO:            ${{ steps.farcaster.outputs.bio }}
+          FC_FOLLOWERS:      ${{ steps.farcaster.outputs.follower-count }}
+          FC_FOLLOWING:      ${{ steps.farcaster.outputs.following-count }}
+          FC_PFP_URL:        ${{ steps.farcaster.outputs.pfp-url }}
+          FC_VERIFICATIONS:  ${{ steps.farcaster.outputs.verifications }}
+          FC_PROFILE_URL:    ${{ steps.farcaster.outputs.profile-url }}
+        run: |
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+          V_COUNT=$(echo "${FC_VERIFICATIONS}" | node -e \
+            "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).length);}catch{console.log(0);}})" 2>/dev/null || echo "0")
+
+          {
+            echo "# 🟣 Farcaster Profile — @${FC_USERNAME}"
+            echo ""
+            echo "> **Generated:** \`${TIMESTAMP}\`  "
+            echo "> **Source:** [Warpcast](${FC_PROFILE_URL})"
+            echo ""
+
+            if [[ -n "${FC_PFP_URL}" ]]; then
+              echo "![Profile picture](${FC_PFP_URL})"
+              echo ""
+            fi
+
+            echo "## Identity"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| FID | \`${FC_FID}\` |"
+            echo "| Username | [@${FC_USERNAME}](${FC_PROFILE_URL}) |"
+            echo "| Display Name | ${FC_DISPLAY_NAME} |"
+            echo ""
+
+            echo "## Bio"
+            echo "${FC_BIO:-> *(no bio set)*}"
+            echo ""
+
+            echo "## Social"
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Followers | **${FC_FOLLOWERS}** |"
+            echo "| Following | ${FC_FOLLOWING} |"
+            echo ""
+
+            echo "## Verified Ethereum Addresses (${V_COUNT})"
+            if [[ "${V_COUNT}" == "0" ]]; then
+              echo "_No verified addresses._"
+            else
+              echo "| Address |"
+              echo "|---------|"
+              echo "${FC_VERIFICATIONS}" | node -e \
+                "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{JSON.parse(d).forEach(a=>console.log('| \`'+a+'\` |'));}catch{console.log('| *(parse error)* |');}})" 2>/dev/null || true
+            fi
+            echo ""
+
+            echo "## Resources"
+            echo "| Resource | Link |"
+            echo "|----------|------|"
+            echo "| Warpcast Profile | [warpcast.com/${FC_USERNAME}](${FC_PROFILE_URL}) |"
+            echo "| Farcaster Hub | [hub.pinata.cloud](https://hub.pinata.cloud/v1/userDataByFid?fid=${FC_FID}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Annotate workflow run
+        shell: bash
+        env:
+          FC_FID:       ${{ steps.farcaster.outputs.fid }}
+          FC_USERNAME:  ${{ steps.farcaster.outputs.username }}
+          FC_FOLLOWERS: ${{ steps.farcaster.outputs.follower-count }}
+          FC_FOLLOWING: ${{ steps.farcaster.outputs.following-count }}
+        run: |
+          echo "::notice title=Farcaster Profile::@${FC_USERNAME} (FID ${FC_FID}) — ${FC_FOLLOWERS} followers, following ${FC_FOLLOWING}."

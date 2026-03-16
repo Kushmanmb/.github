@@ -392,7 +392,7 @@ The `badge` field is optional and is used exclusively by `profile/README.md` to 
 
 **Path:** `actions/resolve-ens/action.yml`
 
-Reads `tokens.json`, validates the full `identity → signing key → wallet address → ENS name` path, and emits a structured summary of all registered tokens and the ENS binding.  Use after `install-wallet` to confirm the complete token chain for `kushmanmb.eth`.
+Reads `tokens.json`, validates the full `identity → signing key → wallet address → ENS name` path, and emits a structured summary of all registered tokens and the ENS binding.  Use after `install-wallet` to confirm the complete token chain for `kushmanmb.eth`.  Also resolves `kushmanmb.base.eth` on Base (chain 8453) and emits a side-by-side comparison of both contract origins (registry and resolver addresses).
 
 #### Inputs
 
@@ -413,6 +413,10 @@ Reads `tokens.json`, validates the full `identity → signing key → wallet add
 | `token-path` | Human-readable string showing the full identity → address → ENS chain |
 | `tokens-summary` | JSON object summarising all registered tokens and the resolved ENS binding |
 | `verification-log` | Multi-line human-readable docs-verification report covering every resolved input, output, and the full token chain.  Also written to the workflow run's step summary automatically. |
+| `base-ens-name` | Base ENS name read from `tokens.json` (e.g. `kushmanmb.base.eth`) |
+| `base-ens-app-url` | Base ENS app URL for the resolved Basename |
+| `basescan-url` | Basescan address URL for the wallet address on Base mainnet |
+| `comparison-report` | Human-readable side-by-side comparison of `kushmanmb.eth` (mainnet) and `kushmanmb.base.eth` (Base) contract origins (registry and resolver) |
 
 #### tokens.json schema
 
@@ -425,6 +429,13 @@ Reads `tokens.json`, validates the full `identity → signing key → wallet add
     "registry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
     "resolver": "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41"
   },
+  "base_ens": {
+    "name": "kushmanmb.base.eth",
+    "network": "base",
+    "chain_id": 8453,
+    "registry": "0xb94704422c2a1e396835a571837aa5ae53285a95",
+    "resolver": "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD"
+  },
   "wallet": {
     "key_type": "hmac-sha256-embedded",
     "domain_key": "kushmanmb-wallet-key-derivation-v1",
@@ -436,7 +447,9 @@ Reads `tokens.json`, validates the full `identity → signing key → wallet add
   "explorers": {
     "mainnet": "https://etherscan.io",
     "sepolia": "https://sepolia.etherscan.io",
-    "ens_app": "https://app.ens.domains/kushmanmb.eth"
+    "base": "https://basescan.org",
+    "ens_app": "https://app.ens.domains/kushmanmb.eth",
+    "base_ens_app": "https://www.base.org/name/kushmanmb"
   }
 }
 ```

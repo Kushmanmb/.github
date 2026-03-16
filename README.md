@@ -4,6 +4,8 @@ https://user-images.githubusercontent.com/93150691/226236121-375ea64f-b4a1-4cc0-
 
 [![Owner: Kushmanmb](https://img.shields.io/badge/owner-Kushmanmb-0075ff?logo=github&logoColor=white)](https://github.com/Kushmanmb)
 [![Tokens Transparency Log](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml/badge.svg)](https://github.com/Kushmanmb/.github/actions/workflows/tokens-transparency.yml)
+[![ENS: kushmanmb.eth](https://img.shields.io/badge/ENS-kushmanmb.eth-5298ff?logo=ethereum&logoColor=white)](https://app.ens.domains/kushmanmb.eth)
+[![Basename: kushmanmb.base.eth](https://img.shields.io/badge/Basename-kushmanmb.base.eth-0052ff?logo=coinbase&logoColor=white)](https://www.base.org/name/kushmanmb)
 
 Reusable GitHub Actions, shared CI/CD workflows, and automation tooling.
 

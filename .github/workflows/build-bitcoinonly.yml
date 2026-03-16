@@ -37,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      members: read
+      organization-administration: write
     steps:
       - name: Checkout bitcoinonly
         uses: actions/checkout@v4

@@ -41,6 +41,13 @@ on:
         description: 'The Review Needed option unique identifier'
         required: true
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  members: write
+  organization-administration: write
+
 jobs:
   manage-project-board:
     runs-on: ${{ inputs.runs-on }}
